@@ -16,6 +16,11 @@
     --body:-apple-system,system-ui,"Segoe UI",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  *{-webkit-tap-highlight-color:transparent}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+      transition-duration:.001ms!important;scroll-behavior:auto!important}
+  }
   html,body{height:100%}
   body{
     font-family:var(--body); color:var(--ink);
@@ -41,19 +46,47 @@
   }
   .avatar{width:40px;height:40px;border-radius:50%;background:var(--blue-wash);
     border:1px solid #d7e8f4; display:grid;place-items:center;overflow:hidden;flex:none;
-    transition:transform .3s ease}
-  .avatar img{width:46px;height:46px;object-fit:contain;transform:translateY(1px)}
+    transition:transform .3s ease; position:relative}
+  .avatar img{width:46px;height:46px;object-fit:contain;transform:translateY(1px);
+    transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+  /* idle: Remi breathes so it never feels frozen */
+  .avatar.alive img{animation:breathe 4.6s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:translateY(1px) scale(1)}50%{transform:translateY(-.5px) scale(1.035)}}
   .avatar.think{animation:bob .9s ease-in-out infinite}
+  .avatar.think img{animation:none}
   @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}
+  /* speaking: soft ring pulses outward */
+  .avatar.speak::after{content:'';position:absolute;inset:-3px;border-radius:50%;
+    border:2px solid var(--blue);opacity:0;animation:ring 1.5s ease-out infinite}
+  @keyframes ring{0%{transform:scale(.9);opacity:.5}70%{opacity:0}100%{transform:scale(1.5);opacity:0}}
+  /* tiny live status dot on the bar avatar */
+  .pres{position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-radius:50%;
+    background:var(--ok);border:2px solid var(--bg);transition:background .3s}
+  .pres.busy{background:var(--blue);animation:dotpulse 1s ease-in-out infinite}
+  @keyframes dotpulse{0%,100%{opacity:1}50%{opacity:.4}}
   .bar h1{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.01em;line-height:1}
   .bar .status{font-size:12px;color:var(--ink-soft);margin-top:2px}
   .bar .right{margin-left:auto;font-size:12px;color:var(--grey);text-align:right;line-height:1.3}
 
   /* ----- scroll body ----- */
   .body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  .view{display:none;padding:18px 20px 28px;animation:fade .35s ease}
+  .view{display:none;padding:18px 20px 28px;animation:fade .42s cubic-bezier(.2,.8,.2,1)}
   .view.on{display:block}
-  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes fade{from{opacity:0;transform:translateY(10px) scale(.992)}to{opacity:1;transform:none}}
+  /* directional slide when moving across the tab bar */
+  .view.fwd{animation:slideL .42s cubic-bezier(.2,.8,.2,1)}
+  .view.back{animation:slideR .42s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slideL{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+  @keyframes slideR{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
+  /* staggered entrance for first-level children of a view */
+  .view.on > .stagger{opacity:0;animation:rise .5s cubic-bezier(.2,.8,.2,1) forwards}
+  .view.on > .stagger:nth-child(1){animation-delay:.04s}
+  .view.on > .stagger:nth-child(2){animation-delay:.10s}
+  .view.on > .stagger:nth-child(3){animation-delay:.16s}
+  .view.on > .stagger:nth-child(4){animation-delay:.22s}
+  .view.on > .stagger:nth-child(5){animation-delay:.28s}
+  .view.on > .stagger:nth-child(6){animation-delay:.34s}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
   .eyebrow{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.08em;
     text-transform:uppercase;color:var(--blue-deep)}
@@ -82,6 +115,55 @@
   /* reveal animation */
   .pop{opacity:0;transform:translateY(8px) scale(.99)}
   .pop.in{opacity:1;transform:none;transition:all .42s cubic-bezier(.2,.7,.2,1)}
+
+  /* ----- living timeline (Today) ----- */
+  .agenda.timeline{position:relative;padding-left:6px}
+  /* continuous rail behind the slots */
+  .agenda.timeline::before{content:'';position:absolute;left:72px;top:14px;bottom:10px;width:2px;
+    background:linear-gradient(180deg,#e7ebef 0%,#e7ebef 100%);border-radius:2px}
+  .slot{position:relative}
+  /* node dot on the rail, per slot */
+  .slot .node{position:absolute;left:67px;top:15px;width:12px;height:12px;border-radius:50%;
+    background:#fff;border:2px solid #cdd9e2;z-index:2;transition:all .3s}
+  .slot.is-class .node{border-color:#c2cbd2}
+  .slot.is-now .node{border-color:var(--blue);background:var(--blue);
+    box-shadow:0 0 0 4px var(--blue-wash);animation:nodebeat 2.4s ease-in-out infinite}
+  .slot.is-done .node{background:#cdd9e2;border-color:#cdd9e2}
+  @keyframes nodebeat{0%,100%{box-shadow:0 0 0 4px var(--blue-wash)}50%{box-shadow:0 0 0 7px rgba(62,155,214,.12)}}
+  .slot.is-done .block{opacity:.62}
+  .slot.is-done .time{opacity:.55}
+  .slot.is-now .block{border-color:#bfe0f2;box-shadow:0 6px 20px rgba(62,155,214,.16)}
+  .block .live{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-size:11px;
+    font-weight:700;color:var(--blue-deep);letter-spacing:.02em}
+  .block .live .dotnow{width:6px;height:6px;border-radius:50%;background:var(--blue);
+    animation:dotpulse 1.2s ease-in-out infinite}
+  /* the "now" marker line that floats at the real current time */
+  .nowline{position:relative;display:flex;align-items:center;gap:7px;margin:1px 0 1px 0;
+    padding-left:34px;height:0;z-index:3;pointer-events:none}
+  .nowline .nl{position:absolute;left:74px;right:6px;height:2px;
+    background:linear-gradient(90deg,var(--maroon),rgba(158,27,34,.15));border-radius:2px}
+  .nowline .nb{position:absolute;left:62px;background:var(--maroon);color:#fff;font-size:10px;
+    font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:7px;
+    box-shadow:0 2px 8px rgba(158,27,34,.3);white-space:nowrap}
+
+  /* ----- skeleton shimmer (loading polish) ----- */
+  .sk-line{height:13px;border-radius:7px;background:#eef1f3;position:relative;overflow:hidden}
+  .sk-line + .sk-line{margin-top:9px}
+  .sk-line::after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);
+    animation:shimmer 1.25s ease-in-out infinite}
+  @keyframes shimmer{100%{transform:translateX(100%)}}
+
+  /* ----- toast (acted-on confirmation) ----- */
+  .toast{position:absolute;left:16px;right:16px;bottom:84px;z-index:55;pointer-events:none;
+    background:var(--ink);color:#fff;border-radius:14px;padding:12px 15px;
+    font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:10px;
+    box-shadow:0 14px 36px rgba(40,50,61,.3);
+    transform:translateY(130%);opacity:0;transition:transform .42s cubic-bezier(.2,.8,.2,1),opacity .3s}
+  .toast.on{transform:none;opacity:1}
+  .toast .ti{width:22px;height:22px;border-radius:50%;background:var(--blue);display:grid;
+    place-items:center;flex:none;color:#fff}
+  .toast.good .ti{background:var(--ok)}
 
   /* ----- cards ----- */
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin-top:14px}
@@ -185,6 +267,49 @@
   .chip.play{background:var(--blue-wash);color:var(--blue-deep)}
   .chip.none{background:transparent;color:var(--grey);font-weight:500;font-style:italic;padding-left:0}
 
+  /* ----- calendar / month grid + toggle ----- */
+  .calhead{display:flex;align-items:center;gap:9px;margin:2px 0 14px}
+  .seg{display:inline-flex;background:#eef1f3;border:1px solid var(--line);border-radius:11px;padding:3px}
+  .seg button{font-family:var(--display);font-weight:600;font-size:12.5px;border:none;background:none;
+    color:var(--ink-soft);padding:6px 14px;border-radius:8px;cursor:pointer;transition:all .16s}
+  .seg button.on{background:#fff;color:var(--blue-deep);box-shadow:0 1px 3px rgba(40,50,61,.12)}
+  .calhead .mlabel{font-family:var(--display);font-size:15px;font-weight:600;color:var(--ink);margin-left:auto}
+
+  .month{margin-top:2px}
+  .wkdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:5px}
+  .wkdays span{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--grey)}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cell{aspect-ratio:1/1.02;border:1px solid var(--line);border-radius:11px;background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+    padding:6px 2px 0;cursor:pointer;position:relative;transition:transform .08s,border-color .15s,background .15s}
+  .cell:active{transform:scale(.96)}
+  .cell.pad{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+  .cell .n{font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  .cell.muted .n{color:var(--grey);font-weight:500}
+  .cell .dots{display:flex;gap:2px;margin-top:auto;margin-bottom:6px;height:5px}
+  .cell .ed{width:4px;height:4px;border-radius:50%;background:var(--blue)}
+  .cell .ed.exam{background:var(--maroon)}
+  .cell.today{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-wash)}
+  .cell.today .n{background:var(--blue);color:#fff;width:23px;height:23px;border-radius:50%;
+    display:grid;place-items:center;font-weight:700}
+  .cell.sel{border-color:var(--blue-deep);background:var(--blue-wash)}
+  .cell.sel.today{background:var(--blue-wash)}
+
+  .daypanel{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .daypanel .dpttl{font-family:var(--display);font-size:15px;font-weight:600;margin-bottom:2px}
+  .daypanel .dpsub{font-size:12.5px;color:var(--ink-soft);margin-bottom:11px}
+  .dpitem{display:flex;gap:11px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+    border-radius:13px;padding:11px 13px;margin-bottom:8px}
+  .dpitem .dpt{font-size:11.5px;color:var(--grey);font-weight:600;width:58px;flex:none;
+    font-variant-numeric:tabular-nums;padding-top:1px}
+  .dpitem .dpb .dpn{font-weight:600;font-size:14px}
+  .dpitem .dpb .dpm{font-size:12px;color:var(--ink-soft);margin-top:1px}
+  .dpitem.exam{border-color:#eccdcb;background:var(--maroon-wash)}
+  .dpitem.exam .dpn{color:var(--maroon)}
+  .dpitem.play{border-color:#cfe6f4}
+  .dpempty{font-size:13px;color:var(--grey);text-align:center;padding:16px;border:1px dashed var(--line);border-radius:12px}
+
   /* ----- to-dos ----- */
   .todo{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--line);
     border-radius:12px;padding:12px 13px;margin-bottom:8px;cursor:pointer}
@@ -229,15 +354,136 @@
   .bars .b.peak{background:var(--blue)}
   .bars .b span{position:absolute;bottom:-19px;left:0;right:0;text-align:center;font-size:10px;color:var(--grey);font-weight:600}
 
+  /* ----- reminders strip (Today) ----- */
+  .remind{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;padding:12px 14px;margin-bottom:14px;cursor:pointer;transition:transform .08s}
+  .remind:active{transform:scale(.99)}
+  .remind .rbell{width:34px;height:34px;border-radius:50%;background:var(--blue-wash);display:grid;
+    place-items:center;flex:none;font-size:16px;position:relative}
+  .remind .rcount{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:9px;
+    background:var(--maroon);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+  .remind .rt{font-weight:600;font-size:14px}
+  .remind .rm{font-size:12px;color:var(--ink-soft);margin-top:1px}
+  .remind .arr{margin-left:auto;color:var(--grey);font-size:20px}
+
+  /* tappable agenda item affordance */
+  .slot .block.tappable{cursor:pointer;transition:transform .08s}
+  .slot .block.tappable:active{transform:scale(.99)}
+
+  /* ----- detail sheet (bottom sheet) ----- */
+  .sheet-scrim{position:absolute;inset:0;background:rgba(20,28,36,.32);z-index:60;opacity:0;
+    pointer-events:none;transition:opacity .26s ease}
+  .sheet-scrim.on{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:61;background:var(--bg);
+    border-radius:24px 24px 0 0;box-shadow:0 -14px 40px rgba(40,50,61,.22);
+    padding:10px 22px calc(env(safe-area-inset-bottom) + 26px);
+    transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-height:82%;overflow-y:auto}
+  .sheet.on{transform:none}
+  .sheet .grab{width:38px;height:4px;border-radius:3px;background:#d4d9de;margin:4px auto 16px}
+  .sheet .sk{font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--blue-deep)}
+  .sheet .stt{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-.02em;margin:3px 0 3px}
+  .sheet .stime{font-size:14px;color:var(--ink-soft);font-weight:500}
+  .sheet .srow{display:flex;gap:11px;align-items:center;margin-top:15px;padding-top:14px;border-top:1px solid var(--line)}
+  .sheet .srow .ic{width:34px;height:34px;border-radius:10px;background:var(--blue-wash);display:grid;
+    place-items:center;flex:none;font-size:16px}
+  .sheet .srow .t{font-weight:600;font-size:13.5px}
+  .sheet .srow .m{font-size:12.5px;color:var(--ink-soft);margin-top:1px}
+  .sheet .sreason{display:flex;gap:8px;align-items:flex-start;margin-top:15px;font-size:13px;
+    color:var(--blue-deep);background:var(--blue-wash);border:1px solid #cfe6f4;border-radius:13px;padding:12px 13px;line-height:1.5}
+  .sheet .sreason svg{flex:none;margin-top:2px}
+  .sheet .sacts{display:flex;gap:9px;margin-top:18px}
+  .sheet .sacts .btn.ghost{flex:1}
+
   /* ----- visible reasoning (the race "thinking") ----- */
-  .reasoning{padding:24px 4px 8px}
+  .reasoning{padding:20px 4px 8px}
+  .reasoning .rhead{display:flex;align-items:center;gap:9px;justify-content:center;margin-bottom:12px}
+  .reasoning .rava{width:30px;height:30px;border-radius:50%;background:var(--blue-wash);
+    border:1px solid #d7e8f4;display:grid;place-items:center;overflow:hidden;flex:none;position:relative}
+  .reasoning .rava img{width:34px;height:34px;object-fit:contain}
+  .reasoning .rava::after{content:'';position:absolute;inset:-2px;border-radius:50%;
+    border:2px solid var(--blue);opacity:0;animation:ring 1.5s ease-out infinite}
   .rstep{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-soft);padding:8px 0;
     opacity:0;transform:translateX(-6px);transition:all .32s ease}
-  .rstep::before{content:'';width:16px;height:16px;border-radius:50%;border:2px solid #cfe0ec;flex:none;transition:all .25s}
+  .rstep::before{content:'';width:16px;height:16px;border-radius:50%;border:2px solid #cfe0ec;flex:none;
+    transition:all .25s;background-position:center;background-repeat:no-repeat;background-size:9px}
   .rstep.show{opacity:1;transform:none}
-  .rstep.show::before{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-wash)}
+  /* in-progress step shows a small spinner ring; resolved step shows a filled check dot */
+  .rstep.show::before{border-color:var(--blue);border-top-color:transparent;animation:spin .7s linear infinite}
+  .rstep.done::before{background-color:var(--blue);border-color:var(--blue);animation:none;
+    box-shadow:0 0 0 3px var(--blue-wash);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E")}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ----- Talk: conversational thread ----- */
+  .thread{display:flex;flex-direction:column;gap:11px;margin-bottom:16px}
+  .msg{display:flex;gap:9px;max-width:88%;animation:msgin .42s cubic-bezier(.2,.8,.2,1)}
+  @keyframes msgin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .msg.me{align-self:flex-end;flex-direction:row-reverse}
+  .msg .mava{width:28px;height:28px;border-radius:50%;background:var(--blue-wash);border:1px solid #d7e8f4;
+    display:grid;place-items:center;overflow:hidden;flex:none;align-self:flex-end}
+  .msg .mava img{width:31px;height:31px;object-fit:contain}
+  .msg .mb{background:var(--card);border:1px solid var(--line);border-radius:4px 16px 16px 16px;
+    padding:10px 13px;font-size:13.5px;color:var(--ink);line-height:1.5}
+  .msg.me .mb{background:var(--blue);color:#fff;border:none;border-radius:16px 4px 16px 16px}
+  /* typing dots while Remi composes */
+  .typing{display:inline-flex;gap:4px;align-items:center;padding:3px 0}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--grey);animation:typ 1.2s ease-in-out infinite}
+  .typing i:nth-child(2){animation-delay:.18s}
+  .typing i:nth-child(3){animation-delay:.36s}
+  @keyframes typ{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-4px);opacity:1}}
+  /* blinking caret on streamed text */
+  .caret{display:inline-block;width:2px;height:1em;background:var(--blue);margin-left:1px;
+    vertical-align:-2px;animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
 
   .hide{display:none!important}
+
+  /* ----- shared tactile + finishing touches ----- */
+  .todo,.set,.entry,.remind,.cell,.dpitem{transition:transform .12s cubic-bezier(.2,.8,.2,1),
+    box-shadow .2s,border-color .2s,background .2s,opacity .2s}
+  .todo:active,.set:active,.dpitem:active{transform:scale(.985)}
+  .entry:hover,.remind:hover{border-color:#cfe0ec;box-shadow:0 6px 18px rgba(40,50,61,.07)}
+  .entry .arr,.remind .arr{transition:transform .2s}
+  .entry:hover .arr,.remind:hover .arr{transform:translateX(3px)}
+  /* satisfying check-off */
+  .todo .box{transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .15s,border-color .15s}
+  .todo.done .box{animation:pop-check .34s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop-check{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+  /* greeting weather/time accent on Today */
+  .glow{background:radial-gradient(120% 80% at 0% 0%,var(--blue-wash) 0%,transparent 60%)}
+  /* segmented + nav springiness */
+  .nav button{transition:color .2s,transform .12s}
+  .nav button:active{transform:scale(.92)}
+  .nav button.on .dot{transform:scale(1.4)}
+  .nav .dot{transition:transform .26s cubic-bezier(.34,1.56,.64,1),background .2s}
+  /* scroll cue: subtle fade at body top when scrolled */
+  .scrollfade{position:absolute;left:0;right:0;height:18px;pointer-events:none;z-index:4;opacity:0;
+    transition:opacity .25s}
+  .scrollfade.on{opacity:1}
+  .scrollfade.top{background:linear-gradient(180deg,var(--bg),transparent)}
+  .body{position:relative}
+  .body > .scrollfade.top{position:sticky;top:0;margin-bottom:-18px}
+
+  /* ============================================================
+     RESPONSIVE — on a real phone the app fills the screen;
+     on desktop/projector it stays the centred mockup ("the app").
+     ============================================================ */
+  @media (max-width:500px){
+    body{
+      display:block; padding:0; min-height:100dvh;
+      background:var(--bg);
+    }
+    .phone{
+      width:100%; max-width:none;
+      height:100vh; height:100dvh;
+      border-radius:0; box-shadow:none;
+    }
+    .notch{display:none}
+    .bar{padding:calc(env(safe-area-inset-top) + 18px) 18px 13px}
+    .view{padding:18px 18px 28px}
+    .nav{padding:7px 8px calc(env(safe-area-inset-bottom) + 12px)}
+  }
 </style>
 </head>
 <body>
@@ -245,7 +491,7 @@
   <div class="notch"></div>
 
   <div class="bar">
-    <div class="avatar" id="ava"><img src="remi-logo.png" alt="Remi" /></div>
+    <div class="avatar alive" id="ava"><img src="remi-logo.png" alt="Remi" /><span class="pres" id="pres"></span></div>
     <div>
       <h1>Remi</h1>
       <div class="status" id="status">Here for your Wednesday</div>
@@ -257,22 +503,28 @@
 
     <!-- ===== TODAY ===== -->
     <section class="view on" id="v-today">
-      <div class="eyebrow">Your day</div>
-      <div class="h2">Wednesday</div>
-      <div class="sub">Two classes, then your evening. Tap <b>Talk</b> when something new lands.</div>
-      <div class="entry" data-go="insights"><div class="ei">📊</div>
+      <div class="eyebrow stagger" id="todayEyebrow">Your day</div>
+      <div class="h2 stagger" id="todayGreeting">Good evening, Aum</div>
+      <div class="sub stagger" id="todaySub">Two classes are behind you. Here's how the rest of Wednesday is shaping up.</div>
+      <div class="remind stagger" id="remindStrip">
+        <div class="rbell">🔔<span class="rcount" id="remindCount">3</span></div>
+        <div><div class="rt">3 reminders set for today</div><div class="rm" id="remindNext">Next: study for exams at 4:00 pm</div></div>
+        <div class="arr">›</div></div>
+      <div class="entry stagger" data-go="insights"><div class="ei">📊</div>
         <div><div class="et">Your week with Remi</div><div class="em">2h 15m of planning saved · 14 things handled</div></div>
         <div class="arr">›</div></div>
-      <div class="agenda" id="todayAgenda"></div>
+      <div class="agenda timeline stagger" id="todayAgenda"></div>
     </section>
 
     <!-- ===== TALK ===== -->
     <section class="view" id="v-talk">
       <div class="eyebrow">Talk to Remi</div>
       <div class="h2">What just landed?</div>
-      <div class="intro">
-        <div class="avatar" style="width:34px;height:34px"><img src="remi-logo.png" style="width:38px;height:38px"/></div>
-        <div class="bubble">Add the things that came up and I'll fit them around your classes — and keep Thursday's exams in mind.</div>
+      <div class="thread" id="thread">
+        <div class="msg">
+          <div class="mava"><img src="remi-logo.png" alt="Remi"/></div>
+          <div class="mb">Add the things that came up and I'll fit them around your classes — and keep Thursday's exams in mind.</div>
+        </div>
       </div>
 
       <div id="composer">
@@ -331,10 +583,27 @@
 
     <!-- ===== CALENDAR ===== -->
     <section class="view" id="v-calendar">
-      <div class="eyebrow">Your week</div>
-      <div class="h2">Jun 15 – 21</div>
+      <div class="eyebrow">Your calendar</div>
+      <div class="h2" id="calTitle">June 2026</div>
       <div class="sub">Everything in one place — Remi keeps it balanced around your deadlines.</div>
-      <div class="week">
+
+      <div class="calhead">
+        <div class="seg" id="calSeg">
+          <button data-cal="month" class="on">Month</button>
+          <button data-cal="week">Week</button>
+        </div>
+        <span class="mlabel" id="calMonthLabel">June 2026</span>
+      </div>
+
+      <!-- MONTH grid (default) -->
+      <div class="month" id="calMonth">
+        <div class="wkdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+        <div class="grid" id="monthGrid"></div>
+        <div class="daypanel" id="dayPanel"></div>
+      </div>
+
+      <!-- WEEK list (toggle) -->
+      <div class="week hide" id="calWeek">
         <div class="day"><div class="dh">Monday<span class="dd">Jun 15</span></div>
           <div class="chips"><span class="chip cls">Class 9:00</span><span class="chip">Work 2:00</span><span class="chip">Gym 7:00</span></div></div>
         <div class="day"><div class="dh">Tuesday<span class="dd">Jun 16</span></div>
@@ -453,6 +722,13 @@
     <button data-v="todos"><span>To-dos</span><span class="dot"></span></button>
     <button data-v="you"><span>You</span><span class="dot"></span></button>
   </div>
+
+  <!-- ===== detail sheet ===== -->
+  <div class="sheet-scrim" id="sheetScrim"></div>
+  <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
+
+  <!-- ===== toast ===== -->
+  <div class="toast" id="toast"><span class="ti" id="toastIc">✓</span><span id="toastMsg"></span></div>
 </div>
 
 <script>
@@ -478,11 +754,76 @@ const PROFILE = {
   ],
 };
 
+/* ---------- calendar data (June 2026) ----------
+   Keyed by day-of-month. Each event: {t:title, start:minutes, kind, dur?(min), end?(min)}.
+   Wednesday Jun 17 = "today" in the demo frame. Events trace to PROFILE + the demo week. */
+const TODAY_DOM = 17;                 // Wed Jun 17 highlighted as today
+const JUN_FIRST_DOW = 1;             // Jun 1 2026 falls on a Monday (0=Sun … 6=Sat)
+const JUN_DAYS = 30;
+const CAL = {
+  15:[{t:"Class",start:9*60,kind:"class",dur:90},{t:"Work shift",start:14*60,kind:"work",dur:180},{t:"Gym",start:19*60,kind:"play",dur:60}],
+  16:[{t:"Class",start:12*60,kind:"class",dur:90},{t:"Study block",start:18*60,kind:"study",dur:120}],
+  17:[ // Wed — the real Wednesday, from PROFILE
+    {t:"CS 4100 — Principles of AI",start:9*60+50,end:11*60+30,kind:"class"},
+    {t:"ENGW 3304 — Presentation",start:11*60+40,end:13*60+20,kind:"class"},
+    {t:"Study for exams",start:16*60,end:18*60,kind:"study"},
+    {t:"Dinner with a friend",start:20*60,end:21*60+30,kind:"social"},
+  ],
+  18:[{t:"Exams",start:9*60,kind:"exam",dur:180,note:"Two exams — your heaviest deadline this week."}],
+  19:[],
+  20:[{t:"Padel",start:16*60,end:17*60+30,kind:"play",moved:true,note:"Moved here by Remi to keep your study time clear before Thursday's exams."}],
+  21:[],
+  9:[{t:"Class",start:9*60,kind:"class",dur:90}],
+  10:[{t:"Class",start:12*60,kind:"class",dur:90},{t:"Study block",start:18*60,kind:"study",dur:90}],
+  24:[{t:"Class",start:9*60,kind:"class",dur:90},{t:"Padel",start:17*60,kind:"play",dur:90}],
+  26:[{t:"Project due",start:23*60+59,kind:"exam",note:"INNO 2301 prototype submission."}],
+};
+const KIND_LABEL = {class:"Class",study:"Study",exam:"Exam",play:"Activity",social:"Social",work:"Work",new:"Added today"};
+function eEnd(e){ return e.end!=null ? e.end : (e.dur!=null ? e.start+e.dur : e.start+60); }
+
 /* ---------- helpers ---------- */
 const fmt = m => { let h=Math.floor(m/60), mm=m%60, ap=h<12?'am':'pm'; let hh=h%12; if(hh===0)hh=12;
   return hh+(mm?':'+String(mm).padStart(2,'0'):'')+' '+ap; };
+const WDAY = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const dur = m => m>=60 ? (m%60? (m/60).toFixed(1)+' hr' : (m/60)+' hr') : m+' min';
 const icon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+/* ---------- live clock ----------
+   The demo frame is Wednesday evening. We anchor "now" to a believable
+   point on the timeline (just after classes, into the study window) and
+   then let the real wall-clock advance it second-to-second so the now-line
+   and current-block glow feel live. Clamped to the day so it always reads. */
+const DEMO_ANCHOR = 16*60 + 24;           // 4:24 pm — mid-study, feels live
+const _bootMs = Date.now();
+function nowMin(){
+  const drift = (Date.now() - _bootMs) / 60000;   // real minutes since load
+  return Math.min(PROFILE.dayEnd - 2, DEMO_ANCHOR + drift);
+}
+function greetWord(){
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+
+/* ---------- toast ---------- */
+let _toastT = null;
+function toast(msg, good){
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastIc').textContent = good ? '✓' : '↻';
+  t.classList.toggle('good', !!good);
+  t.classList.add('on');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(()=> t.classList.remove('on'), 2600);
+}
+
+/* ---------- avatar presence ---------- */
+function setPresence(state){               // 'idle' | 'busy' | 'speak'
+  const ava = document.getElementById('ava'), pres = document.getElementById('pres');
+  ava.classList.toggle('think', state==='busy');
+  ava.classList.toggle('speak', state==='speak');
+  ava.classList.toggle('alive', state==='idle');
+  pres.classList.toggle('busy', state!=='idle');
+}
 
 /* ---------- state ---------- */
 let newTasks = [];      // {title, len}
@@ -530,21 +871,76 @@ function plan(){
 }
 
 /* ---------- rendering ---------- */
-function blockHTML(b){
+/* slotState: 'now' (in progress), 'done' (already passed), '' (upcoming).
+   live=true draws the timeline node + "happening now" tag (Today view). */
+function blockHTML(b, live){
   const cls = b.kind==="class" ? "class" : (b.kind==="new" ? "new" : "");
   const tag = b.kind==="new" ? `<span class="tag">new</span>` : "";
   const meta = b.kind==="class" ? "Locked" : dur(b.end-b.start);
   const reason = b.reason ? `<div class="reason">${icon}<span>${b.reason}</span></div>` : "";
-  return `<div class="slot"><div class="time">${fmt(b.start)}</div>
-    <div class="block ${cls}">${tag}<div class="t">${b.title}</div><div class="meta">${meta}</div>${reason}</div></div>`;
+  let stateCls = "", node = "", liveTag = "";
+  if(live){
+    const end = b.end!=null ? b.end : eEnd(b);
+    const n = nowMin();
+    if(n >= b.start && n < end){ stateCls = " is-now"; liveTag = `<div class="live"><span class="dotnow"></span>Happening now</div>`; }
+    else if(n >= end){ stateCls = " is-done"; }
+    if(b.kind==="class") stateCls += " is-class";
+    node = `<span class="node"></span>`;
+  }
+  return `<div class="slot${stateCls}">${node}<div class="time">${fmt(b.start)}</div>
+    <div class="block tappable ${cls}">${tag}<div class="t">${b.title}</div><div class="meta">${meta}</div>${reason}${liveTag}</div></div>`;
 }
-function renderAgenda(el, blocks){
-  el.innerHTML = blocks.map(blockHTML).join("");
+function wireAgendaTaps(el, blocks){
+  el.querySelectorAll('.slot').forEach((slot,i)=>{
+    const b = blocks[i];
+    if(!b) return;
+    slot.querySelector('.block').onclick = ()=> itemSheet(b);
+  });
+}
+function renderAgenda(el, blocks, live){
+  el.innerHTML = blocks.map(b=>blockHTML(b, live)).join("");
+  if(live) injectNowLine(el, blocks);
+  wireAgendaTaps(el, blocks);
 }
 
+/* Floating "now" line dropped between the block before and after the current time. */
+function injectNowLine(el, blocks){
+  const n = nowMin();
+  const slots = [...el.querySelectorAll('.slot')];
+  // skip if a block is currently in progress (its glow already marks "now")
+  const inProgress = blocks.some(b => n >= b.start && n < (b.end!=null?b.end:eEnd(b)));
+  if(inProgress) return;
+  let idx = blocks.findIndex(b => b.start > n);    // first upcoming block
+  if(idx === -1) return;                            // nothing left today
+  if(idx === 0) return;                             // before the day starts; skip
+  const line = document.createElement('div');
+  line.className = 'nowline';
+  line.innerHTML = `<span class="nb">Now · ${fmt(Math.round(n))}</span><span class="nl"></span>`;
+  el.insertBefore(line, slots[idx]);
+}
+
+let _todayTick = null;
 function renderToday(){
   const base = [...PROFILE.fixed, ...PROFILE.planned].sort((a,b)=>a.start-b.start);
-  renderAgenda(document.getElementById('todayAgenda'), base);
+  renderAgenda(document.getElementById('todayAgenda'), base, true);
+  // time-aware greeting + sub
+  const gw = greetWord();
+  document.getElementById('todayGreeting').textContent = `${gw}, Aum`;
+  const n = nowMin();
+  const past = base.filter(b => n >= (b.end!=null?b.end:eEnd(b))).length;
+  const cur = base.find(b => n>=b.start && n<(b.end!=null?b.end:eEnd(b)));
+  const next = base.find(b => b.start > n);
+  let sub;
+  if(cur) sub = `Right now: ${cur.title}. ` + (next? `Then ${next.title.split(' — ')[0]} at ${fmt(next.start)}.` : `Last thing on today.`);
+  else if(next) sub = `${past} done so far. Next up: ${next.title.split(' — ')[0]} at ${fmt(next.start)}.`;
+  else sub = `That's your Wednesday wrapped — exams are tomorrow, rest up.`;
+  document.getElementById('todaySub').textContent = sub;
+  // keep the now-line / glow advancing while Today is open
+  clearInterval(_todayTick);
+  _todayTick = setInterval(()=>{
+    if(document.getElementById('v-today').classList.contains('on')) renderToday();
+    else clearInterval(_todayTick);
+  }, 30000);
 }
 
 function renderYou(){
@@ -559,6 +955,94 @@ function renderYou(){
   document.getElementById('ctxRules').innerHTML = PROFILE.rules.map(r=>
     `<div class="row"><div class="ic" style="background:#f0f3f6">${r.ic}</div>
      <div><div class="t">${r.t}</div><div class="m">${r.m}</div></div></div>`).join("");
+}
+
+/* ---------- calendar: month grid + day panel ---------- */
+let selDom = TODAY_DOM;
+function eventDot(e){ return `<span class="ed${e.kind==='exam'?' exam':''}"></span>`; }
+function renderMonth(){
+  const grid = document.getElementById('monthGrid');
+  if(!grid) return;
+  let cells = '';
+  for(let i=0;i<JUN_FIRST_DOW;i++) cells += `<div class="cell pad"></div>`;
+  for(let d=1; d<=JUN_DAYS; d++){
+    const evs = CAL[d] || [];
+    const isToday = d===TODAY_DOM;
+    const isSel = d===selDom;
+    const dots = evs.slice(0,3).map(eventDot).join('');
+    cells += `<div class="cell${isToday?' today':''}${isSel?' sel':''}" data-dom="${d}">
+      <span class="n">${d}</span><span class="dots">${dots}</span></div>`;
+  }
+  grid.innerHTML = cells;
+  grid.querySelectorAll('.cell[data-dom]').forEach(c=> c.onclick=()=>selectDay(+c.dataset.dom));
+  renderDayPanel();
+}
+function selectDay(d){
+  selDom = d;
+  document.querySelectorAll('#monthGrid .cell').forEach(c=>{
+    c.classList.toggle('sel', +c.dataset.dom===d);
+  });
+  renderDayPanel();
+}
+function renderDayPanel(){
+  const panel = document.getElementById('dayPanel');
+  if(!panel) return;
+  const dow = (JUN_FIRST_DOW + selDom - 1) % 7;
+  const evs = (CAL[selDom] || []).slice().sort((a,b)=>a.start-b.start);
+  const head = `<div class="dpttl">${WDAY[dow]}, June ${selDom}${selDom===TODAY_DOM?' · Today':''}</div>`;
+  if(!evs.length){
+    panel.innerHTML = head + `<div class="dpsub">Nothing scheduled.</div>
+      <div class="dpempty">Open day — tap Talk to fill it around your week.</div>`;
+    return;
+  }
+  const items = evs.map(e=>{
+    const cls = e.kind==='exam' ? 'exam' : (e.kind==='play' ? 'play' : '');
+    const time = e.start>=23*60+59 ? 'all day' : fmt(e.start);
+    const meta = (KIND_LABEL[e.kind]||'') + (e.moved?' · moved by Remi':'') + (e.note?' · '+e.note:'');
+    return `<div class="dpitem ${cls}"><div class="dpt">${time}</div>
+      <div class="dpb"><div class="dpn">${e.t}</div><div class="dpm">${meta}</div></div></div>`;
+  }).join('');
+  panel.innerHTML = head + `<div class="dpsub">${evs.length} ${evs.length===1?'thing':'things'} on your day</div>` + items;
+}
+function setCalMode(mode){
+  const m = document.getElementById('calMonth'), w = document.getElementById('calWeek');
+  document.querySelectorAll('#calSeg button').forEach(b=> b.classList.toggle('on', b.dataset.cal===mode));
+  m.classList.toggle('hide', mode!=='month');
+  w.classList.toggle('hide', mode!=='week');
+  document.getElementById('calTitle').textContent = mode==='month' ? 'June 2026' : 'Jun 15 – 21';
+}
+
+/* ---------- detail sheet ---------- */
+function openSheet(html){
+  document.getElementById('sheetBody').innerHTML = html;
+  document.getElementById('sheet').classList.add('on');
+  document.getElementById('sheetScrim').classList.add('on');
+}
+function closeSheet(){
+  document.getElementById('sheet').classList.remove('on');
+  document.getElementById('sheetScrim').classList.remove('on');
+}
+function itemSheet(b){
+  const kind = b.kind || 'event';
+  const klabel = KIND_LABEL[kind] || 'Event';
+  const span = `${fmt(b.start)} – ${fmt(b.end!=null?b.end:eEnd(b))}`;
+  const len = (b.end!=null?b.end:eEnd(b)) - b.start;
+  const reason = b.reason ? `<div class="sreason">${icon}<span>${b.reason}</span></div>` : '';
+  const lockNote = kind==='class'
+    ? `<div class="srow"><div class="ic">🔒</div><div><div class="t">Protected time</div><div class="m">Remi never schedules over your classes</div></div></div>`
+    : '';
+  openSheet(`
+    <div class="sk">${klabel}</div>
+    <div class="stt">${b.title}</div>
+    <div class="stime">${span} · ${dur(len)}</div>
+    ${reason}
+    ${lockNote}
+    <div class="srow"><div class="ic">🔔</div><div><div class="t">Remind me</div><div class="m">A nudge 15 min before</div></div></div>
+    <div class="sacts">
+      <button class="btn ghost" data-sheet-close>Move</button>
+      <button class="btn primary" style="width:auto;flex:1" data-sheet-close>Remind me</button>
+    </div>`);
+  document.querySelectorAll('[data-sheet-close]').forEach(x=> x.onclick=closeSheet);
 }
 
 /* ---------- talk composer ---------- */
@@ -583,22 +1067,46 @@ function runPlan(){
   const t0 = performance.now();
   const out = plan();
   document.getElementById('composer').classList.add('hide');
-  const ava = document.getElementById('ava'); ava.classList.add('think');
+  setPresence('busy');
   document.getElementById('status').textContent = "Working it out…";
   const res = document.getElementById('result');
+
+  // build a reasoning trace that reads like Remi is actually reasoning,
+  // and references the real tasks the user just added.
+  const titles = newTasks.map(t=>t.title);
+  const steps = [
+    "Reading your Wednesday — two classes, then your evening",
+    "Exams are Thursday, so I'm protecting your study block",
+    `Finding room for ${titles.length===1?'“'+titles[0]+'”':titles.length+' new things'}`,
+    "Padel clashes with study time — looking for a better day",
+  ];
   res.innerHTML = `<div class="reasoning">
-    <div class="eyebrow" style="color:var(--blue-deep);text-align:center;margin-bottom:6px">Remi is thinking</div>
-    <div class="rstep">Reading your Wednesday…</div>
-    <div class="rstep">Exams Thursday — protecting your study time</div>
-    <div class="rstep">Fitting ${newTasks.length} new task${newTasks.length>1?'s':''} into your open slots</div>
+    <div class="rhead">
+      <div class="rava"><img src="remi-logo.png" alt="Remi"/></div>
+      <div class="eyebrow" style="color:var(--blue-deep)">Remi is thinking it through</div>
+    </div>
+    ${steps.map(s=>`<div class="rstep"><span>${s}</span></div>`).join('')}
   </div>`;
-  res.querySelectorAll('.rstep').forEach((s,i)=> setTimeout(()=> s.classList.add('show'), 300 + i*330));
+  const rsteps = [...res.querySelectorAll('.rstep')];
+  // each step: appears (spinner) → resolves (check) before the next begins
+  rsteps.forEach((s,i)=>{
+    setTimeout(()=> s.classList.add('show'), 260 + i*430);
+    setTimeout(()=> s.classList.add('done'), 260 + i*430 + 330);
+  });
+  const total = 260 + rsteps.length*430 + 250;
 
   setTimeout(()=>{
-    ava.classList.remove('think');
+    setPresence('speak');
     document.getElementById('status').textContent = "Sorted ✓";
     const secs = Math.max(1.1,(performance.now()-t0)/1000).toFixed(1);
+    const summary = titles.length===1
+      ? `Done. I fit “${titles[0]}” into your afternoon and moved padel to Saturday so Thursday's exams stay protected.`
+      : `Done. I fit your ${titles.length} new things around your classes and moved padel to Saturday so Thursday's exams stay protected.`;
     res.innerHTML = `
+      <div class="msg" style="margin-bottom:16px">
+        <div class="mava"><img src="remi-logo.png" alt="Remi"/></div>
+        <div class="mb"><span id="planSay"></span></div>
+      </div>
       <div class="timing">
         <div class="stat remi"><div class="k">Remi</div><div class="v">${secs}s</div><div class="u">just now</div></div>
         <div class="stat hand"><div class="k">By hand</div><div class="v">12–15<span style="font-size:13px"> min</span></div><div class="u">our interview average</div></div>
@@ -624,9 +1132,16 @@ function runPlan(){
       <p style="font-size:12.5px;color:var(--grey);text-align:center;margin-top:16px">Reminders set · I'll nudge you 15 min before each.</p>
       <button class="btn ghost block" id="reset" style="margin-top:14px">↺ Run it again</button>`;
 
+    // Remi "speaks" the summary word-by-word, then settles back to idle
+    streamText(document.getElementById('planSay'), summary, ()=>{
+      setPresence('idle');
+      document.getElementById('status').textContent = "Sorted ✓";
+    });
+
     // staged reveal of the agenda
     const ra = document.getElementById('resAgenda');
     ra.innerHTML = out.agenda.map(b=>blockHTML(b).replace('class="slot"','class="slot pop"')).join("");
+    wireAgendaTaps(ra, out.agenda);
     const slots = ra.querySelectorAll('.slot');
     slots.forEach((s,i)=> setTimeout(()=>s.classList.add('in'), 90*i));
 
@@ -635,28 +1150,51 @@ function runPlan(){
         `<div class="ch" style="color:var(--ok)">${icon} Booked — Saturday 4:00 pm. Confirmation in your email.</div>`;
       e.target.closest('.card').style.background="var(--ok-wash)";
       e.target.closest('.card').style.borderColor="#cfe6d8";
+      toast("Padel booked for Saturday 4:00 pm", true);
     };
     document.getElementById('later').onclick = e=>{
       e.target.parentElement.parentElement.innerHTML =
         `<div class="ch" style="color:var(--ink-soft)">Okay — left it unbooked. It's on your Saturday whenever you decide.</div>`;
+      toast("Left it unbooked — it's on your Saturday");
     };
     document.getElementById('reset').onclick = resetPlan;
-  }, 1350);
+  }, total);
+}
+
+/* word-by-word streaming reveal with a blinking caret (the "present companion" feel) */
+function streamText(el, text, done){
+  const words = text.split(' ');
+  el.innerHTML = '<span class="caret"></span>';
+  let i = 0;
+  (function tick(){
+    if(i >= words.length){ el.querySelector('.caret')?.remove(); if(done) done(); return; }
+    el.innerHTML = words.slice(0,i+1).join(' ') + '<span class="caret"></span>';
+    i++;
+    setTimeout(tick, 34 + Math.random()*44);
+  })();
 }
 function resetPlan(){
   newTasks=[]; planned=false;
   document.getElementById('result').innerHTML='';
   document.getElementById('composer').classList.remove('hide');
   document.getElementById('status').textContent="Here for your Wednesday";
+  setPresence('idle');
   renderTasks();
 }
 
 /* ---------- nav ---------- */
+const TAB_ORDER = ['today','calendar','talk','todos','you'];
+let curView = 'today';
 function switchView(v){
-  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
-  document.getElementById('v-'+v).classList.add('on');
+  const from = TAB_ORDER.indexOf(curView), to = TAB_ORDER.indexOf(v);
+  const dir = (from>=0 && to>=0) ? (to>from ? 'fwd' : (to<from ? 'back' : '')) : '';
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on','fwd','back'));
+  const el = document.getElementById('v-'+v);
+  el.classList.add('on'); if(dir) el.classList.add(dir);
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
   document.querySelector('.body').scrollTop=0;
+  curView = v;
+  if(v==='today') renderToday();        // refresh the live timeline on entry
 }
 
 /* ---------- wire up ---------- */
@@ -670,11 +1208,50 @@ document.getElementById('planBtn').onclick = runPlan;
 
 document.querySelectorAll('[data-go]').forEach(e=> e.onclick=()=>switchView(e.dataset.go));
 document.querySelectorAll('.back').forEach(b=> b.onclick=()=>switchView(b.dataset.back));
-document.querySelectorAll('[data-toggle]').forEach(s=> s.onclick=()=>s.classList.toggle('on'));
-document.querySelectorAll('.todo').forEach(t=> t.onclick=()=>{ t.classList.toggle('done');
-  t.querySelector('.box').textContent = t.classList.contains('done')?'✓':''; });
+document.querySelectorAll('[data-toggle]').forEach(s=> s.onclick=()=>{
+  s.classList.toggle('on');
+  const name = s.closest('.set')?.querySelector('.st')?.textContent || 'Setting';
+  toast(`${name} ${s.classList.contains('on')?'on':'off'}`, s.classList.contains('on'));
+});
+document.querySelectorAll('.todo').forEach(t=> t.onclick=()=>{
+  if(t.classList.contains('done') && t.querySelector('.by')) return;  // Remi-handled rows are read-only
+  const becoming = !t.classList.contains('done');
+  t.classList.toggle('done');
+  t.querySelector('.box').textContent = t.classList.contains('done')?'✓':'';
+  if(becoming) toast(`Nice — “${t.querySelector('.lbl').textContent}” done`, true);
+});
 
-renderToday(); renderYou(); renderTasks();
+/* calendar month/week toggle */
+document.getElementById('calSeg').onclick = e=>{ const b=e.target.closest('button'); if(!b)return;
+  setCalMode(b.dataset.cal); };
+
+/* reminders strip → detail sheet */
+document.getElementById('remindStrip').onclick = ()=>{
+  openSheet(`
+    <div class="sk">Today's reminders</div>
+    <div class="stt">3 reminders set</div>
+    <div class="stime">Remi nudges you 15 min before each.</div>
+    <div class="srow"><div class="ic">📚</div><div><div class="t">Study for exams</div><div class="m">Reminder at 3:45 pm — 4:00 pm start</div></div></div>
+    <div class="srow"><div class="ic">🍽️</div><div><div class="t">Dinner with a friend</div><div class="m">Reminder at 7:45 pm — 8:00 pm start</div></div></div>
+    <div class="srow"><div class="ic">📦</div><div><div class="t">Pick up a package</div><div class="m">Reminder before the pickup window closes</div></div></div>
+    <div class="sacts"><button class="btn primary" style="width:auto;flex:1" data-sheet-close>Got it</button></div>`);
+  document.querySelectorAll('[data-sheet-close]').forEach(x=> x.onclick=closeSheet);
+};
+
+/* sheet scrim closes the sheet */
+document.getElementById('sheetScrim').onclick = closeSheet;
+
+/* a soft fade at the top of the scroll area once content scrolls under the bar */
+(function(){
+  const body = document.querySelector('.body');
+  const fade = document.createElement('div');
+  fade.className = 'scrollfade top';
+  body.insertBefore(fade, body.firstChild);   // sticky child, rides the top of the scroll area
+  body.addEventListener('scroll', ()=> fade.classList.toggle('on', body.scrollTop>8), {passive:true});
+})();
+
+setPresence('idle');
+renderToday(); renderYou(); renderTasks(); renderMonth(); setCalMode('month');
 </script>
 </body>
 </html>
