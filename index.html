@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Remi</title>
+<style>
+  :root{
+    --bg:#fbfbfa; --ink:#28323d; --ink-soft:#5b6770;
+    --blue:#3e9bd6; --blue-deep:#2f7fb3; --blue-wash:#eef6fb;
+    --maroon:#9e1b22; --maroon-wash:#fbeceb;
+    --grey:#9aa2a8; --line:#e7e9ec; --card:#ffffff;
+    --ok:#3a7d5d; --ok-wash:#ebf5ef;
+    --shadow:0 18px 50px rgba(40,50,61,.16);
+    --display:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif;
+    --body:-apple-system,system-ui,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--body); color:var(--ink);
+    background:
+      radial-gradient(120% 90% at 50% -10%, #eef3f7 0%, #e4e9ee 55%, #dde3e9 100%);
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px;
+  }
+  /* ----- phone frame ----- */
+  .phone{
+    width:390px; height:min(844px,94vh);
+    background:var(--bg); border-radius:46px;
+    box-shadow:var(--shadow), 0 0 0 11px #11161b, 0 0 0 13px #2b333b;
+    overflow:hidden; position:relative; display:flex; flex-direction:column;
+  }
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:148px;height:30px;background:#11161b;border-radius:0 0 18px 18px;z-index:40}
+
+  /* ----- app bar ----- */
+  .bar{
+    display:flex;align-items:center;gap:11px;
+    padding:46px 20px 14px; position:relative; z-index:5;
+    border-bottom:1px solid var(--line); background:var(--bg);
+  }
+  .avatar{width:40px;height:40px;border-radius:50%;background:var(--blue-wash);
+    border:1px solid #d7e8f4; display:grid;place-items:center;overflow:hidden;flex:none;
+    transition:transform .3s ease}
+  .avatar img{width:46px;height:46px;object-fit:contain;transform:translateY(1px)}
+  .avatar.think{animation:bob .9s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}
+  .bar h1{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.01em;line-height:1}
+  .bar .status{font-size:12px;color:var(--ink-soft);margin-top:2px}
+  .bar .right{margin-left:auto;font-size:12px;color:var(--grey);text-align:right;line-height:1.3}
+
+  /* ----- scroll body ----- */
+  .body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .view{display:none;padding:18px 20px 28px;animation:fade .35s ease}
+  .view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--blue-deep)}
+  .h2{font-family:var(--display);font-size:25px;font-weight:600;letter-spacing:-.02em;margin:3px 0 2px}
+  .sub{font-size:13.5px;color:var(--ink-soft);margin-bottom:16px}
+
+  /* ----- agenda ----- */
+  .agenda{display:flex;flex-direction:column;gap:9px}
+  .slot{display:flex;gap:12px;align-items:stretch}
+  .slot .time{font-size:11.5px;color:var(--grey);width:62px;flex:none;padding-top:13px;
+    font-variant-numeric:tabular-nums;font-weight:600}
+  .block{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:11px 13px;position:relative}
+  .block .t{font-weight:600;font-size:14.5px}
+  .block .meta{font-size:12px;color:var(--ink-soft);margin-top:2px}
+  .block.class{background:#f4f6f8;border-color:#e3e7ea}
+  .block.class .t{color:var(--ink-soft)}
+  .block.new{border-color:#bfe0f2;box-shadow:0 0 0 3px var(--blue-wash)}
+  .block .tag{position:absolute;top:-8px;right:11px;font-size:10px;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:7px}
+  .block.new .tag{background:var(--blue);color:#fff}
+  .reason{display:flex;gap:7px;align-items:flex-start;margin-top:8px;font-size:12px;color:var(--blue-deep)}
+  .reason svg{flex:none;margin-top:1px}
+  .free{font-size:11.5px;color:var(--grey);padding:2px 0 2px 74px;font-style:normal}
+
+  /* reveal animation */
+  .pop{opacity:0;transform:translateY(8px) scale(.99)}
+  .pop.in{opacity:1;transform:none;transition:all .42s cubic-bezier(.2,.7,.2,1)}
+
+  /* ----- cards ----- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin-top:14px}
+  .card.moved{border-color:#d8e7f1;background:linear-gradient(180deg,#fff, #f8fcff)}
+  .card.ask{border-color:#eccdcb;background:var(--maroon-wash)}
+  .card .ch{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:600;font-size:14px}
+  .pill{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+    padding:3px 8px;border-radius:20px}
+  .pill.move{background:var(--blue-wash);color:var(--blue-deep)}
+  .pill.money{background:#f4d6d4;color:var(--maroon)}
+  .card p{font-size:13px;color:var(--ink-soft);margin-top:7px;line-height:1.5}
+  .ask-actions{display:flex;gap:9px;margin-top:13px}
+  .btn{font-family:var(--display);font-weight:600;font-size:14px;border:none;border-radius:12px;
+    padding:11px 16px;cursor:pointer;transition:transform .08s,filter .15s}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--blue);color:#fff;width:100%}
+  .btn.primary:hover{filter:brightness(1.04)}
+  .btn.go{background:var(--maroon);color:#fff;flex:1}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink-soft);flex:1}
+  .btn.block{width:100%}
+  .btn[disabled]{opacity:.5;cursor:default}
+
+  /* ----- timing banner (the race) ----- */
+  .timing{display:flex;gap:10px;margin:2px 0 16px}
+  .timing .stat{flex:1;border-radius:14px;padding:12px 13px;border:1px solid var(--line)}
+  .timing .stat.remi{background:var(--blue-wash);border-color:#cfe6f4}
+  .timing .stat.hand{background:#f6f6f4}
+  .timing .k{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+  .timing .v{font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+  .timing .remi .v{color:var(--blue-deep)}
+  .timing .hand .v{color:var(--ink-soft)}
+  .timing .u{font-size:11px;color:var(--grey)}
+
+  /* ----- talk input ----- */
+  .intro{display:flex;gap:11px;margin-bottom:16px}
+  .intro .bubble{background:var(--card);border:1px solid var(--line);border-radius:4px 16px 16px 16px;
+    padding:11px 14px;font-size:13.5px;color:var(--ink);line-height:1.5}
+  .addrow{display:flex;gap:8px;margin-bottom:10px}
+  .addrow input{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;
+    font-family:var(--body);background:#fff;color:var(--ink)}
+  .addrow input:focus{outline:none;border-color:var(--blue)}
+  .durs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .dur{font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--ink-soft);
+    border-radius:20px;padding:6px 12px;cursor:pointer}
+  .dur.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tasklist{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+  .task{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);
+    border-radius:12px;padding:10px 12px;font-size:14px}
+  .task .d{margin-left:auto;font-size:12px;color:var(--grey);font-weight:600}
+  .task .x{color:var(--grey);cursor:pointer;font-size:18px;line-height:1;padding:0 2px}
+  .empty{font-size:13px;color:var(--grey);text-align:center;padding:14px;border:1px dashed var(--line);border-radius:12px;margin-bottom:14px}
+
+  /* ----- You / profile ----- */
+  .ctx{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;gap:11px;align-items:center;background:#fff;border:1px solid var(--line);
+    border-radius:13px;padding:12px 13px}
+  .row .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;font-size:15px}
+  .row .t{font-weight:600;font-size:14px}
+  .row .m{font-size:12.5px;color:var(--ink-soft);margin-top:1px}
+  .flag{display:flex;gap:9px;align-items:center;background:var(--maroon-wash);border:1px solid #eccdcb;
+    border-radius:13px;padding:12px 13px;margin:4px 0}
+  .flag .t{font-weight:600;font-size:13.5px;color:var(--maroon)}
+  .secttl{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--grey);margin:16px 2px 8px}
+
+  /* ----- bottom nav ----- */
+  .nav{display:flex;border-top:1px solid var(--line);background:var(--bg);padding:7px 8px 22px}
+  .nav button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;gap:3px;padding:7px 0;color:var(--grey);font-family:var(--display);font-weight:600;font-size:11px}
+  .nav button.on{color:var(--blue-deep)}
+  .nav .dot{width:5px;height:5px;border-radius:50%;background:transparent;margin-top:1px}
+  .nav button.on .dot{background:var(--blue)}
+
+  /* ----- secondary screen header ----- */
+  .shead{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+  .back{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:#fff;
+    display:grid;place-items:center;cursor:pointer;font-size:17px;color:var(--ink-soft);flex:none}
+  .back:active{transform:scale(.94)}
+
+  /* ----- tappable entry card ----- */
+  .entry{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;padding:14px;cursor:pointer;margin-bottom:16px;transition:transform .08s}
+  .entry:active{transform:scale(.99)}
+  .entry .ei{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:none;
+    font-size:17px;background:var(--blue-wash)}
+  .entry .et{font-weight:600;font-size:14.5px}
+  .entry .em{font-size:12.5px;color:var(--ink-soft);margin-top:1px}
+  .entry .arr{margin-left:auto;color:var(--grey);font-size:20px}
+
+  /* ----- calendar / week ----- */
+  .week{display:flex;flex-direction:column;gap:8px}
+  .day{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px}
+  .day.today{border-color:#bfe0f2;box-shadow:0 0 0 3px var(--blue-wash)}
+  .day .dh{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
+  .day .dh .dd{margin-left:auto;font-size:12px;color:var(--grey);font-weight:600}
+  .today-pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    background:var(--blue);color:#fff;padding:2px 7px;border-radius:7px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .chip{font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:8px;background:#f1f4f6;color:var(--ink-soft)}
+  .chip.cls{background:#e9edf0}
+  .chip.play{background:var(--blue-wash);color:var(--blue-deep)}
+  .chip.none{background:transparent;color:var(--grey);font-weight:500;font-style:italic;padding-left:0}
+
+  /* ----- to-dos ----- */
+  .todo{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--line);
+    border-radius:12px;padding:12px 13px;margin-bottom:8px;cursor:pointer}
+  .todo .box{width:21px;height:21px;border-radius:7px;border:2px solid #cdd4d9;flex:none;display:grid;
+    place-items:center;font-size:13px;color:#fff;transition:all .15s}
+  .todo.done .box{background:var(--blue);border-color:var(--blue)}
+  .todo.done .lbl{text-decoration:line-through;color:var(--grey)}
+  .todo .lbl{font-size:14px;font-weight:500}
+  .todo .by{margin-left:auto;font-size:11px;font-weight:600;color:var(--blue-deep);background:var(--blue-wash);
+    padding:3px 8px;border-radius:20px;flex:none}
+
+  /* ----- settings / privacy ----- */
+  .set{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);
+    border-radius:13px;padding:13px;margin-bottom:8px}
+  .set .si{width:30px;height:30px;border-radius:9px;background:#f0f3f6;display:grid;place-items:center;flex:none;font-size:15px}
+  .set .st{font-weight:600;font-size:13.5px}
+  .set .sm{font-size:12px;color:var(--ink-soft);margin-top:1px}
+  .switch{margin-left:auto;width:44px;height:26px;border-radius:20px;background:#d6dbe0;flex:none;
+    position:relative;cursor:pointer;transition:background .18s}
+  .switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.22);transition:left .18s}
+  .switch.on{background:var(--blue)}
+  .switch.on::after{left:21px}
+  .switch.locked{background:var(--maroon)}
+  .note{font-size:12.5px;color:var(--blue-deep);line-height:1.5;background:var(--blue-wash);
+    border:1px solid #cfe6f4;border-radius:13px;padding:12px 13px;margin:6px 0}
+  .danger{display:flex;gap:9px;margin-top:8px}
+  .danger button{flex:1;font-family:var(--display);font-weight:600;font-size:13px;border-radius:11px;
+    padding:11px;border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer}
+
+  /* ----- insights ----- */
+  .bigcard{background:linear-gradient(180deg,#fff,#f3fbff);border:1px solid #d8ecf8;border-radius:18px;
+    padding:18px;margin-bottom:11px}
+  .bignum{font-family:var(--display);font-size:44px;font-weight:700;letter-spacing:-.03em;color:var(--blue-deep);line-height:1}
+  .bigcard .l{font-size:13px;color:var(--ink-soft);margin-top:6px}
+  .igrid{display:flex;gap:10px;margin-bottom:11px}
+  .icard{flex:1;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+  .icard .n{font-family:var(--display);font-size:26px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+  .icard .l{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.35}
+  .bars{display:flex;align-items:flex-end;gap:7px;height:84px;margin:8px 4px 26px}
+  .bars .b{flex:1;background:var(--blue-wash);border-radius:6px 6px 0 0;position:relative}
+  .bars .b.peak{background:var(--blue)}
+  .bars .b span{position:absolute;bottom:-19px;left:0;right:0;text-align:center;font-size:10px;color:var(--grey);font-weight:600}
+
+  /* ----- visible reasoning (the race "thinking") ----- */
+  .reasoning{padding:24px 4px 8px}
+  .rstep{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-soft);padding:8px 0;
+    opacity:0;transform:translateX(-6px);transition:all .32s ease}
+  .rstep::before{content:'';width:16px;height:16px;border-radius:50%;border:2px solid #cfe0ec;flex:none;transition:all .25s}
+  .rstep.show{opacity:1;transform:none}
+  .rstep.show::before{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-wash)}
+
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+
+  <div class="bar">
+    <div class="avatar" id="ava"><img src="remi-logo.png" alt="Remi" /></div>
+    <div>
+      <h1>Remi</h1>
+      <div class="status" id="status">Here for your Wednesday</div>
+    </div>
+    <div class="right">Wed · Jun 17<br/><span style="color:var(--maroon);font-weight:600">Exams Thu</span></div>
+  </div>
+
+  <div class="body">
+
+    <!-- ===== TODAY ===== -->
+    <section class="view on" id="v-today">
+      <div class="eyebrow">Your day</div>
+      <div class="h2">Wednesday</div>
+      <div class="sub">Two classes, then your evening. Tap <b>Talk</b> when something new lands.</div>
+      <div class="entry" data-go="insights"><div class="ei">📊</div>
+        <div><div class="et">Your week with Remi</div><div class="em">2h 15m of planning saved · 14 things handled</div></div>
+        <div class="arr">›</div></div>
+      <div class="agenda" id="todayAgenda"></div>
+    </section>
+
+    <!-- ===== TALK ===== -->
+    <section class="view" id="v-talk">
+      <div class="eyebrow">Talk to Remi</div>
+      <div class="h2">What just landed?</div>
+      <div class="intro">
+        <div class="avatar" style="width:34px;height:34px"><img src="remi-logo.png" style="width:38px;height:38px"/></div>
+        <div class="bubble">Add the things that came up and I'll fit them around your classes — and keep Thursday's exams in mind.</div>
+      </div>
+
+      <div id="composer">
+        <div class="addrow">
+          <input id="taskName" placeholder="e.g. pick up a package" />
+        </div>
+        <div class="durs" id="durs">
+          <span class="dur sel" data-d="15">15 min</span>
+          <span class="dur" data-d="30">30 min</span>
+          <span class="dur" data-d="60">1 hr</span>
+          <span class="dur" data-d="90">1.5 hr</span>
+        </div>
+        <button class="btn ghost block" id="addBtn" style="margin-bottom:14px">+ Add to today</button>
+
+        <div class="tasklist" id="taskList"></div>
+        <div class="empty" id="emptyHint">Nothing added yet. Pull a few from the room.</div>
+
+        <button class="btn primary" id="planBtn" disabled>Plan my Wednesday</button>
+      </div>
+
+      <div id="result"></div>
+    </section>
+
+    <!-- ===== YOU ===== -->
+    <section class="view" id="v-you">
+      <div class="eyebrow">Your context</div>
+      <div class="h2">What Remi knows</div>
+      <div class="sub">This is why it plans like you would — only faster.</div>
+
+      <div class="entry" data-go="settings"><div class="ei">🔒</div>
+        <div><div class="et">Privacy &amp; data</div><div class="em">What Remi can access — your data stays yours</div></div>
+        <div class="arr">›</div></div>
+
+      <div class="entry" data-go="connect"><div class="ei">📅</div>
+        <div><div class="et">Connected accounts</div><div class="em">Google Calendar connected</div></div>
+        <div class="arr">›</div></div>
+
+      <div class="entry" data-go="learned"><div class="ei">🧠</div>
+        <div><div class="et">What Remi's learned</div><div class="em">Your preferences, editable</div></div>
+        <div class="arr">›</div></div>
+
+      <div class="flag">
+        <span style="font-size:16px">📌</span>
+        <div><div class="t">Exams Thursday</div></div>
+      </div>
+
+      <div class="secttl">Your Wednesday</div>
+      <div class="ctx" id="ctxFixed"></div>
+
+      <div class="secttl">This week</div>
+      <div class="ctx" id="ctxWeek"></div>
+
+      <div class="secttl">Your rules</div>
+      <div class="ctx" id="ctxRules"></div>
+    </section>
+
+    <!-- ===== CALENDAR ===== -->
+    <section class="view" id="v-calendar">
+      <div class="eyebrow">Your week</div>
+      <div class="h2">Jun 15 – 21</div>
+      <div class="sub">Everything in one place — Remi keeps it balanced around your deadlines.</div>
+      <div class="week">
+        <div class="day"><div class="dh">Monday<span class="dd">Jun 15</span></div>
+          <div class="chips"><span class="chip cls">Class 9:00</span><span class="chip">Work 2:00</span><span class="chip">Gym 7:00</span></div></div>
+        <div class="day"><div class="dh">Tuesday<span class="dd">Jun 16</span></div>
+          <div class="chips"><span class="chip cls">Class 12:00</span><span class="chip">Study 6:00</span></div></div>
+        <div class="day today"><div class="dh"><span class="today-pill">Today</span>Wednesday<span class="dd">Jun 17</span></div>
+          <div class="chips"><span class="chip cls">2 classes</span><span class="chip">Study 4:00</span><span class="chip">Dinner 8:00</span><span class="chip play">+3 new</span></div></div>
+        <div class="day"><div class="dh"><span style="color:var(--maroon);font-size:11px">●</span>Thursday<span class="dd">Jun 18</span></div>
+          <div class="chips"><span class="chip" style="background:var(--maroon-wash);color:var(--maroon)">Exams 9:00</span></div></div>
+        <div class="day"><div class="dh">Friday<span class="dd">Jun 19</span></div>
+          <div class="chips"><span class="chip none">Light day</span></div></div>
+        <div class="day"><div class="dh">Saturday<span class="dd">Jun 20</span></div>
+          <div class="chips"><span class="chip play">Padel 4:00</span><span class="chip none">moved here by Remi</span></div></div>
+        <div class="day"><div class="dh">Sunday<span class="dd">Jun 21</span></div>
+          <div class="chips"><span class="chip none">Open</span></div></div>
+      </div>
+    </section>
+
+    <!-- ===== TO-DOS ===== -->
+    <section class="view" id="v-todos">
+      <div class="eyebrow">To-dos</div>
+      <div class="h2">What needs doing</div>
+      <div class="sub">Remi quietly handles the small stuff and only surfaces what needs you.</div>
+
+      <div class="secttl">Today</div>
+      <div class="todo"><span class="box"></span><span class="lbl">Pick up a package</span></div>
+      <div class="todo"><span class="box"></span><span class="lbl">Call the dentist</span></div>
+      <div class="todo"><span class="box"></span><span class="lbl">Finish the lab report</span></div>
+
+      <div class="secttl">This week</div>
+      <div class="todo"><span class="box"></span><span class="lbl">Buy a birthday gift for mom</span></div>
+      <div class="todo"><span class="box"></span><span class="lbl">Renew bus pass</span></div>
+
+      <div class="secttl">Remi handled these</div>
+      <div class="todo done"><span class="box">✓</span><span class="lbl">Booked a study room for Thursday</span><span class="by">Remi</span></div>
+      <div class="todo done"><span class="box">✓</span><span class="lbl">Renewed your library books</span><span class="by">Remi</span></div>
+      <div class="todo done"><span class="box">✓</span><span class="lbl">Added exams to your calendar</span><span class="by">Remi</span></div>
+    </section>
+
+    <!-- ===== SETTINGS / PRIVACY ===== -->
+    <section class="view" id="v-settings">
+      <div class="shead"><div class="back" data-back="you">‹</div>
+        <div><div class="eyebrow">Settings</div><div class="h2" style="margin:0">Privacy &amp; data</div></div></div>
+      <div class="sub">You decide what Remi can see and do. Always.</div>
+
+      <div class="note">🔒 Your schedule and context stay on your device. Remi never sells or shares your data.</div>
+
+      <div class="secttl">What Remi can access</div>
+      <div class="set"><div class="si">📅</div><div><div class="st">Calendar</div><div class="sm">Read and plan your events</div></div><div class="switch on" data-toggle></div></div>
+      <div class="set"><div class="si">📍</div><div><div class="st">Location</div><div class="sm">Travel time between places</div></div><div class="switch on" data-toggle></div></div>
+      <div class="set"><div class="si">✉️</div><div><div class="st">Email</div><div class="sm">Off — turn on when you're ready</div></div><div class="switch" data-toggle></div></div>
+      <div class="set"><div class="si">👥</div><div><div class="st">Contacts</div><div class="sm">Off</div></div><div class="switch" data-toggle></div></div>
+
+      <div class="secttl">Before Remi acts</div>
+      <div class="set"><div class="si">💳</div><div><div class="st">Always ask before money or messaging</div><div class="sm">Locked on — Remi never spends or messages without you</div></div><div class="switch locked on"></div></div>
+
+      <div class="danger"><button>Download my data</button><button>Delete everything</button></div>
+    </section>
+
+    <!-- ===== INSIGHTS ===== -->
+    <section class="view" id="v-insights">
+      <div class="shead"><div class="back" data-back="today">‹</div>
+        <div><div class="eyebrow">Insights</div><div class="h2" style="margin:0">Your week with Remi</div></div></div>
+      <div class="sub" style="margin-top:6px">Less in your head, more done.</div>
+
+      <div class="bigcard"><div class="bignum">2h 15m</div><div class="l">of planning Remi did for you this week</div></div>
+
+      <div class="igrid">
+        <div class="icard"><div class="n">14</div><div class="l">things Remi handled on its own</div></div>
+        <div class="icard"><div class="n">3</div><div class="l">times it asked before acting</div></div>
+      </div>
+
+      <div class="secttl">Where your week got heavy</div>
+      <div class="bars">
+        <div class="b" style="height:34%"><span>M</span></div>
+        <div class="b" style="height:52%"><span>T</span></div>
+        <div class="b peak" style="height:92%"><span>W</span></div>
+        <div class="b" style="height:70%"><span>T</span></div>
+        <div class="b" style="height:30%"><span>F</span></div>
+        <div class="b" style="height:24%"><span>S</span></div>
+        <div class="b" style="height:18%"><span>S</span></div>
+      </div>
+      <div class="note">Wednesday was your heaviest day — Remi front-loaded the small tasks and protected your study time for Thursday's exams.</div>
+    </section>
+
+    <!-- ===== WHAT REMI LEARNED ===== -->
+    <section class="view" id="v-learned">
+      <div class="shead"><div class="back" data-back="you">‹</div>
+        <div><div class="eyebrow">Personalization</div><div class="h2" style="margin:0">What Remi's learned</div></div></div>
+      <div class="sub">Built from your calendar and what you accept or change. Edit or delete any of it.</div>
+      <div class="ctx">
+        <div class="row"><div class="ic" style="background:#f0f3f6">📚</div><div><div class="t">You study best in the afternoon</div><div class="m">from 6 plans you kept</div></div><div style="margin-left:auto;color:var(--grey);font-size:15px">✎</div></div>
+        <div class="row"><div class="ic" style="background:#f0f3f6">🏋️</div><div><div class="t">Gym stays in the morning</div><div class="m">you moved it back twice</div></div><div style="margin-left:auto;color:var(--grey);font-size:15px">✎</div></div>
+        <div class="row"><div class="ic" style="background:#f0f3f6">🎯</div><div><div class="t">Fun gets bumped before exams</div><div class="m">learned this week</div></div><div style="margin-left:auto;color:var(--grey);font-size:15px">✎</div></div>
+        <div class="row"><div class="ic" style="background:#f0f3f6">📍</div><div><div class="t">Errands batched near campus</div><div class="m">from your accepted plans</div></div><div style="margin-left:auto;color:var(--grey);font-size:15px">✎</div></div>
+      </div>
+      <div class="note">Remi never trains a model on you — this is just your preferences, stored privately. Wipe any of it anytime.</div>
+    </section>
+
+    <!-- ===== CONNECTED ACCOUNTS / ONBOARDING ===== -->
+    <section class="view" id="v-connect">
+      <div class="shead"><div class="back" data-back="you">‹</div>
+        <div><div class="eyebrow">Setup</div><div class="h2" style="margin:0">Connected accounts</div></div></div>
+      <div class="sub">One tap to connect. Remi reads your real commitments so it never plans on top of them.</div>
+      <div class="set"><div class="si">📅</div><div><div class="st">Google Calendar</div><div class="sm">Connected · your real schedule</div></div><div style="margin-left:auto;color:var(--ok);font-weight:700;font-size:13px">● On</div></div>
+      <div class="set"><div class="si">🍎</div><div><div class="st">Apple Calendar</div><div class="sm">Not connected</div></div><button class="btn ghost" style="margin-left:auto;padding:8px 14px;font-size:13px;width:auto">Connect</button></div>
+      <div class="set"><div class="si">✉️</div><div><div class="st">Outlook</div><div class="sm">Not connected</div></div><button class="btn ghost" style="margin-left:auto;padding:8px 14px;font-size:13px;width:auto">Connect</button></div>
+      <div class="note">🔒 One-tap sign-in (OAuth) — Remi never sees your password, and you can disconnect anytime.</div>
+    </section>
+
+  </div>
+
+  <div class="nav">
+    <button class="on" data-v="today"><span>Today</span><span class="dot"></span></button>
+    <button data-v="calendar"><span>Calendar</span><span class="dot"></span></button>
+    <button data-v="talk"><span>Talk</span><span class="dot"></span></button>
+    <button data-v="todos"><span>To-dos</span><span class="dot"></span></button>
+    <button data-v="you"><span>You</span><span class="dot"></span></button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Remi — seeded context.  EDIT to match Aum's real Wednesday.
+   (placeholders flagged // confirm)
+   ============================================================ */
+const PROFILE = {
+  fixed: [ // Aum's real Wednesday
+    {title:"CS 4100 — Principles of AI", start:9*60+50,  end:11*60+30, kind:"class"},
+    {title:"ENGW 3304 — Presentation",   start:11*60+40, end:13*60+20, kind:"class"},
+  ],
+  planned: [
+    {title:"Study for exams", start:16*60,    end:18*60,    kind:"study"},
+    {title:"Padel",           start:18*60+30, end:20*60,    kind:"play", examConflict:true},
+    {title:"Dinner with a friend", start:20*60, end:21*60+30, kind:"social"},
+  ],
+  dayStart:8*60, dayEnd:22*60,
+  rules:[
+    {ic:"🎓", t:"Nothing during class", m:"9:00–10:30 and 12:00–1:30 are locked"},
+    {ic:"🏋️", t:"Gym stays in the morning", m:"never moved to the evening"},
+    {ic:"🔒", t:"Ask before money or messages", m:"Remi checks with you first"},
+  ],
+};
+
+/* ---------- helpers ---------- */
+const fmt = m => { let h=Math.floor(m/60), mm=m%60, ap=h<12?'am':'pm'; let hh=h%12; if(hh===0)hh=12;
+  return hh+(mm?':'+String(mm).padStart(2,'0'):'')+' '+ap; };
+const dur = m => m>=60 ? (m%60? (m/60).toFixed(1)+' hr' : (m/60)+' hr') : m+' min';
+const icon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+/* ---------- state ---------- */
+let newTasks = [];      // {title, len}
+let selDur = 15;
+let planned = false;
+
+/* ---------- the planning engine (deterministic) ---------- */
+function freeGaps(blocks){
+  const s=[...blocks].sort((a,b)=>a.start-b.start); const gaps=[]; let cur=PROFILE.dayStart;
+  for(const b of s){ if(b.start>cur) gaps.push({start:cur,end:b.start,after:lastBefore(s,b.start)}); cur=Math.max(cur,b.end); }
+  if(cur<PROFILE.dayEnd) gaps.push({start:cur,end:PROFILE.dayEnd,after:s[s.length-1]});
+  return gaps;
+}
+function lastBefore(arr,t){ let r=null; for(const b of arr){ if(b.end<=t) r=b; } return r; }
+
+function plan(){
+  // 1. padel moves off Wednesday — exams Thursday
+  const moved = {title:"Padel", to:"Saturday 4:00 pm",
+    reason:"You've got exams Thursday — I kept your Wednesday evening clear and moved padel to your free Saturday."};
+  // 2. blocks that stay on Wednesday
+  const keep = [...PROFILE.fixed, ...PROFILE.planned.filter(p=>!p.examConflict)]
+    .map(b=>({...b}));
+  // 3. fit the new tasks into the gaps
+  const gaps = freeGaps(keep);
+  const placed = [];
+  for(const t of newTasks){
+    const g = gaps.find(g => (g.end-g.start) >= t.len);
+    if(!g){ placed.push({...t, start:null}); continue; }
+    const start = g.start;
+    const prev = placed.length ? placed[placed.length-1] : null;
+    let reason;
+    if(prev && prev.start!=null && prev.end===start) reason = `Right after “${prev.title}” — you're still free.`;
+    else if(g.after && g.after.kind==="class") reason = "Slotted right after your class.";
+    else if(g.after && g.after.kind==="study") reason = "Tucked in after your study block.";
+    else if(!g.after) reason = "First thing — your morning was open.";
+    else reason = "Dropped into an open stretch, nothing else there.";
+    placed.push({...t, start, end:start+t.len, reason});
+    g.start += t.len;
+  }
+  // 4. assemble Wednesday agenda
+  const agenda = [...keep, ...placed.filter(p=>p.start!=null)
+      .map(p=>({title:p.title, start:p.start, end:p.end, kind:"new", reason:p.reason}))]
+      .sort((a,b)=>a.start-b.start);
+  return {agenda, moved, placed};
+}
+
+/* ---------- rendering ---------- */
+function blockHTML(b){
+  const cls = b.kind==="class" ? "class" : (b.kind==="new" ? "new" : "");
+  const tag = b.kind==="new" ? `<span class="tag">new</span>` : "";
+  const meta = b.kind==="class" ? "Locked" : dur(b.end-b.start);
+  const reason = b.reason ? `<div class="reason">${icon}<span>${b.reason}</span></div>` : "";
+  return `<div class="slot"><div class="time">${fmt(b.start)}</div>
+    <div class="block ${cls}">${tag}<div class="t">${b.title}</div><div class="meta">${meta}</div>${reason}</div></div>`;
+}
+function renderAgenda(el, blocks){
+  el.innerHTML = blocks.map(blockHTML).join("");
+}
+
+function renderToday(){
+  const base = [...PROFILE.fixed, ...PROFILE.planned].sort((a,b)=>a.start-b.start);
+  renderAgenda(document.getElementById('todayAgenda'), base);
+}
+
+function renderYou(){
+  const f = PROFILE.fixed.map(b=>`<div class="row"><div class="ic" style="background:#f0f3f6">🎓</div>
+    <div><div class="t">${b.title}</div><div class="m">${fmt(b.start)}–${fmt(b.end)}</div></div></div>`).join("");
+  document.getElementById('ctxFixed').innerHTML = f;
+  const wk = PROFILE.planned.map(b=>{
+    const ic = b.kind==="play"?"🎾":b.kind==="study"?"📚":"🍽️";
+    return `<div class="row"><div class="ic" style="background:#f0f3f6">${ic}</div>
+      <div><div class="t">${b.title}</div><div class="m">${fmt(b.start)}–${fmt(b.end)}</div></div></div>`;}).join("");
+  document.getElementById('ctxWeek').innerHTML = wk;
+  document.getElementById('ctxRules').innerHTML = PROFILE.rules.map(r=>
+    `<div class="row"><div class="ic" style="background:#f0f3f6">${r.ic}</div>
+     <div><div class="t">${r.t}</div><div class="m">${r.m}</div></div></div>`).join("");
+}
+
+/* ---------- talk composer ---------- */
+function renderTasks(){
+  const list = document.getElementById('taskList');
+  const empty = document.getElementById('emptyHint');
+  list.innerHTML = newTasks.map((t,i)=>`<div class="task"><span>${t.title}</span>
+    <span class="d">${dur(t.len)}</span><span class="x" data-i="${i}">×</span></div>`).join("");
+  empty.classList.toggle('hide', newTasks.length>0);
+  document.getElementById('planBtn').disabled = newTasks.length===0;
+  list.querySelectorAll('.x').forEach(x=>x.onclick=()=>{newTasks.splice(+x.dataset.i,1);renderTasks();});
+}
+function addTask(){
+  const inp = document.getElementById('taskName');
+  const v = inp.value.trim(); if(!v) return;
+  newTasks.push({title:v, len:selDur}); inp.value=''; renderTasks(); inp.focus();
+}
+
+/* ---------- run the plan (the race) ---------- */
+function runPlan(){
+  if(!newTasks.length) return;
+  const t0 = performance.now();
+  const out = plan();
+  document.getElementById('composer').classList.add('hide');
+  const ava = document.getElementById('ava'); ava.classList.add('think');
+  document.getElementById('status').textContent = "Working it out…";
+  const res = document.getElementById('result');
+  res.innerHTML = `<div class="reasoning">
+    <div class="eyebrow" style="color:var(--blue-deep);text-align:center;margin-bottom:6px">Remi is thinking</div>
+    <div class="rstep">Reading your Wednesday…</div>
+    <div class="rstep">Exams Thursday — protecting your study time</div>
+    <div class="rstep">Fitting ${newTasks.length} new task${newTasks.length>1?'s':''} into your open slots</div>
+  </div>`;
+  res.querySelectorAll('.rstep').forEach((s,i)=> setTimeout(()=> s.classList.add('show'), 300 + i*330));
+
+  setTimeout(()=>{
+    ava.classList.remove('think');
+    document.getElementById('status').textContent = "Sorted ✓";
+    const secs = Math.max(1.1,(performance.now()-t0)/1000).toFixed(1);
+    res.innerHTML = `
+      <div class="timing">
+        <div class="stat remi"><div class="k">Remi</div><div class="v">${secs}s</div><div class="u">just now</div></div>
+        <div class="stat hand"><div class="k">By hand</div><div class="v">12–15<span style="font-size:13px"> min</span></div><div class="u">our interview average</div></div>
+      </div>
+      <div class="eyebrow">Your new Wednesday</div>
+      <div class="agenda" id="resAgenda" style="margin-top:8px"></div>
+      ${out.placed.some(p=>p.start==null) ? `<div class="card"><div class="ch"><span class="pill move">Heads-up</span> A couple didn't fit today</div><p>${out.placed.filter(p=>p.start==null).map(p=>p.title).join(', ')} — your Wednesday's full, so I'd take these first thing tomorrow instead. Want that?</p></div>` : ``}
+
+      <div class="card moved">
+        <div class="ch"><span class="pill move">Moved</span> Padel → Saturday 4:00 pm</div>
+        <p>${out.moved.reason}</p>
+      </div>
+
+      <div class="card ask">
+        <div class="ch"><span class="pill money">Costs money</span> Book the padel court?</div>
+        <p>Saturday 4:00 pm at your usual place — $12. I won't pay for anything without asking you first.</p>
+        <div class="ask-actions">
+          <button class="btn go" id="approve">Yes, book it</button>
+          <button class="btn ghost" id="later">Not now</button>
+        </div>
+      </div>
+
+      <p style="font-size:12.5px;color:var(--grey);text-align:center;margin-top:16px">Reminders set · I'll nudge you 15 min before each.</p>
+      <button class="btn ghost block" id="reset" style="margin-top:14px">↺ Run it again</button>`;
+
+    // staged reveal of the agenda
+    const ra = document.getElementById('resAgenda');
+    ra.innerHTML = out.agenda.map(b=>blockHTML(b).replace('class="slot"','class="slot pop"')).join("");
+    const slots = ra.querySelectorAll('.slot');
+    slots.forEach((s,i)=> setTimeout(()=>s.classList.add('in'), 90*i));
+
+    document.getElementById('approve').onclick = e=>{
+      e.target.parentElement.parentElement.innerHTML =
+        `<div class="ch" style="color:var(--ok)">${icon} Booked — Saturday 4:00 pm. Confirmation in your email.</div>`;
+      e.target.closest('.card').style.background="var(--ok-wash)";
+      e.target.closest('.card').style.borderColor="#cfe6d8";
+    };
+    document.getElementById('later').onclick = e=>{
+      e.target.parentElement.parentElement.innerHTML =
+        `<div class="ch" style="color:var(--ink-soft)">Okay — left it unbooked. It's on your Saturday whenever you decide.</div>`;
+    };
+    document.getElementById('reset').onclick = resetPlan;
+  }, 1350);
+}
+function resetPlan(){
+  newTasks=[]; planned=false;
+  document.getElementById('result').innerHTML='';
+  document.getElementById('composer').classList.remove('hide');
+  document.getElementById('status').textContent="Here for your Wednesday";
+  renderTasks();
+}
+
+/* ---------- nav ---------- */
+function switchView(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  document.querySelector('.body').scrollTop=0;
+}
+
+/* ---------- wire up ---------- */
+document.querySelectorAll('.nav button').forEach(b=> b.onclick=()=>switchView(b.dataset.v));
+document.getElementById('durs').onclick = e=>{ if(!e.target.classList.contains('dur'))return;
+  document.querySelectorAll('.dur').forEach(d=>d.classList.remove('sel'));
+  e.target.classList.add('sel'); selDur=+e.target.dataset.d; };
+document.getElementById('addBtn').onclick = addTask;
+document.getElementById('taskName').addEventListener('keydown', e=>{ if(e.key==='Enter') addTask(); });
+document.getElementById('planBtn').onclick = runPlan;
+
+document.querySelectorAll('[data-go]').forEach(e=> e.onclick=()=>switchView(e.dataset.go));
+document.querySelectorAll('.back').forEach(b=> b.onclick=()=>switchView(b.dataset.back));
+document.querySelectorAll('[data-toggle]').forEach(s=> s.onclick=()=>s.classList.toggle('on'));
+document.querySelectorAll('.todo').forEach(t=> t.onclick=()=>{ t.classList.toggle('done');
+  t.querySelector('.box').textContent = t.classList.contains('done')?'✓':''; });
+
+renderToday(); renderYou(); renderTasks();
+</script>
+</body>
+</html>
