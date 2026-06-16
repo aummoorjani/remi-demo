@@ -108,6 +108,9 @@
   .block .tag{position:absolute;top:-8px;right:11px;font-size:10px;font-weight:700;
     letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:7px}
   .block.new .tag{background:var(--blue);color:#fff}
+  .block.gone{opacity:.72;border-style:dashed;background:#fafafa}
+  .block.gone .t{text-decoration:line-through;color:var(--grey)}
+  .block.gone .meta{color:var(--blue-deep)}
   .reason{display:flex;gap:7px;align-items:flex-start;margin-top:8px;font-size:12px;color:var(--blue-deep)}
   .reason svg{flex:none;margin-top:1px}
   .free{font-size:11.5px;color:var(--grey);padding:2px 0 2px 74px;font-style:normal}
@@ -619,13 +622,13 @@
         <div class="day today"><div class="dh"><span class="today-pill">Today</span>Tuesday<span class="dd">Jun 16</span></div>
           <div class="chips"><span class="chip play">Gym 8:00</span><span class="chip cls">2 classes</span><span class="chip cls">INNO 1:30–5</span><span class="chip">Study 5:00</span><span class="chip">Dinner 8:00</span></div></div>
         <div class="day"><div class="dh">Wednesday<span class="dd">Jun 17</span></div>
-          <div class="chips"><span class="chip cls">2 classes</span><span class="chip">Study 4:00</span><span class="chip">Dinner 8:00</span><span class="chip play">+3 new</span><span class="chip none" style="text-decoration:line-through">Padel → Sat</span></div></div>
+          <div class="chips"><span class="chip cls">2 classes</span><span class="chip">Study 4:00</span><span class="chip play" id="wkPadelWed">Padel 6:30</span><span class="chip">Dinner 8:00</span><span class="chip play">+3 new</span></div></div>
         <div class="day"><div class="dh"><span style="color:var(--maroon);font-size:11px">●</span>Thursday<span class="dd">Jun 18</span></div>
           <div class="chips"><span class="chip" style="background:var(--maroon-wash);color:var(--maroon)">Exams 9:00</span></div></div>
         <div class="day"><div class="dh">Friday<span class="dd">Jun 19</span></div>
           <div class="chips"><span class="chip none">Light day</span></div></div>
         <div class="day"><div class="dh">Saturday<span class="dd">Jun 20</span></div>
-          <div class="chips"><span class="chip play">Padel 4:00</span><span class="chip none">moved here by Remi</span></div></div>
+          <div class="chips"><span class="chip none" id="wkSatOpen">Open</span><span class="chip play hide" id="wkPadelSat">Padel 4:00</span><span class="chip none hide" id="wkPadelSatNote">moved here by Remi</span></div></div>
         <div class="day"><div class="dh">Sunday<span class="dd">Jun 21</span></div>
           <div class="chips"><span class="chip none">Open</span></div></div>
       </div>
@@ -753,6 +756,7 @@ const TODAY_SCHED = [
   {title:"ENGW 3304 — Presentation",   start:11*60+40, end:13*60+20,  kind:"class"},
   {title:"INNO 2301 — Final Pitch",    start:13*60+30, end:17*60,     kind:"class"},  // 1:30–5:00, you present ~2:30
   {title:"Study for exams",            start:17*60,    end:19*60,     kind:"study"},  // after INNO — confirm time
+  {title:"Padel",                      start:19*60,    end:20*60,     kind:"play"},   // moves to Saturday when you run the chat
   {title:"Dinner with a friend",       start:20*60,    end:21*60+30,  kind:"social"},
 ];
 
@@ -795,7 +799,7 @@ const CAL = {
     {t:"CS 4100 — Principles of AI",start:9*60+50,end:11*60+30,kind:"class"},
     {t:"ENGW 3304 — Presentation",start:11*60+40,end:13*60+20,kind:"class"},
     {t:"Study for exams",start:16*60,end:18*60,kind:"study"},
-    {t:"Padel",start:18*60+30,end:20*60,kind:"play",movedOut:true,note:"moved to Saturday — exams Thursday"},
+    {t:"Padel",start:18*60+30,end:20*60,kind:"play"},
     {t:"Dinner with a friend",start:20*60,end:21*60+30,kind:"social"},
   ],
   18:[{t:"Exams",start:9*60,kind:"exam",dur:180,note:"Two exams — your heaviest deadline this week."}],
@@ -809,6 +813,35 @@ const CAL = {
 };
 const KIND_LABEL = {class:"Class",study:"Study",exam:"Exam",play:"Activity",social:"Social",work:"Work",new:"Added today"};
 function eEnd(e){ return e.end!=null ? e.end : (e.dur!=null ? e.start+e.dur : e.start+60); }
+
+/* ---------- padel demo state: starts on Wednesday + today, moves to Saturday when you run the chat ---------- */
+const _padelToday = TODAY_SCHED.find(e=>e.title==="Padel");
+const _padelWed   = CAL[17].find(e=>e.t==="Padel");
+const _padelSat   = (CAL[20]||[]).find(e=>e.t==="Padel");
+let padelMoved = false;
+function applyWeekPadel(){
+  const wed = document.getElementById('wkPadelWed');
+  if(wed){
+    wed.textContent = padelMoved ? 'Padel → Sat' : 'Padel 6:30';
+    wed.className = padelMoved ? 'chip none' : 'chip play';
+    wed.style.textDecoration = padelMoved ? 'line-through' : '';
+  }
+  const open = document.getElementById('wkSatOpen'),
+        sat  = document.getElementById('wkPadelSat'),
+        note = document.getElementById('wkPadelSatNote');
+  if(open) open.classList.toggle('hide', padelMoved);
+  if(sat)  sat.classList.toggle('hide', !padelMoved);
+  if(note) note.classList.toggle('hide', !padelMoved);
+}
+function setPadelMoved(v){
+  padelMoved = !!v;
+  if(_padelToday) _padelToday.movedOut = padelMoved;
+  if(_padelWed){ _padelWed.movedOut = padelMoved; _padelWed.note = padelMoved ? "moved to Saturday — exams Thursday" : ""; }
+  CAL[20] = (padelMoved && _padelSat) ? [_padelSat] : [];
+  if(typeof renderToday==='function') renderToday();
+  if(typeof renderMonth==='function') renderMonth();
+  applyWeekPadel();
+}
 
 /* ---------- helpers ---------- */
 const fmt = m => { let h=Math.floor(m/60), mm=m%60, ap=h<12?'am':'pm'; let hh=h%12; if(hh===0)hh=12;
@@ -921,7 +954,7 @@ function plan(){
 function blockHTML(b, live){
   const cls = b.kind==="class" ? "class" : (b.kind==="new" ? "new" : "");
   const tag = b.kind==="new" ? `<span class="tag">new</span>` : "";
-  const meta = b.kind==="class" ? "Locked" : dur(b.end-b.start);
+  const meta = b.movedOut ? "Moved to Saturday — exams Thursday" : (b.kind==="class" ? "Locked" : dur(b.end-b.start));
   const reason = b.reason ? `<div class="reason">${icon}<span>${b.reason}</span></div>` : "";
   let stateCls = "", node = "", liveTag = "";
   if(live){
@@ -933,7 +966,7 @@ function blockHTML(b, live){
     node = `<span class="node"></span>`;
   }
   return `<div class="slot${stateCls}">${node}<div class="time">${fmt(b.start)}</div>
-    <div class="block tappable ${cls}">${tag}<div class="t">${b.title}</div><div class="meta">${meta}</div>${reason}${liveTag}</div></div>`;
+    <div class="block tappable ${cls}${b.movedOut?' gone':''}">${tag}<div class="t">${b.title}</div><div class="meta">${meta}</div>${reason}${liveTag}</div></div>`;
 }
 function wireAgendaTaps(el, blocks){
   el.querySelectorAll('.slot').forEach((slot,i)=>{
@@ -1340,6 +1373,7 @@ function sendChat(){
       e.target.parentElement.parentElement.innerHTML = `<div class="ch" style="color:var(--ink-soft)">Okay — left it unbooked. It's on your Saturday whenever you decide.</div>`;
       toast("Left it unbooked — it's on your Saturday");
     };
+    setPadelMoved(true);   // the move just happened — reflect it on Today + the calendar
     scrollThread();
   }, 1400);
 }
@@ -1417,7 +1451,7 @@ document.getElementById('sheetScrim').onclick = closeSheet;
 })();
 
 setPresence('idle');
-renderToday(); renderYou(); renderMonth(); setCalMode('month');
+renderToday(); renderYou(); renderMonth(); setCalMode('month'); setPadelMoved(false);
 </script>
 </body>
 </html>
