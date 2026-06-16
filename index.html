@@ -1146,10 +1146,11 @@ function runPlan(){
     slots.forEach((s,i)=> setTimeout(()=>s.classList.add('in'), 90*i));
 
     document.getElementById('approve').onclick = e=>{
-      e.target.parentElement.parentElement.innerHTML =
+      const card = e.target.closest('.card');          // capture BEFORE wiping innerHTML detaches the button
+      const box = e.target.parentElement.parentElement;
+      box.innerHTML =
         `<div class="ch" style="color:var(--ok)">${icon} Booked — Saturday 4:00 pm. Confirmation in your email.</div>`;
-      e.target.closest('.card').style.background="var(--ok-wash)";
-      e.target.closest('.card').style.borderColor="#cfe6d8";
+      if(card){ card.style.background="var(--ok-wash)"; card.style.borderColor="#cfe6d8"; }
       toast("Padel booked for Saturday 4:00 pm", true);
     };
     document.getElementById('later').onclick = e=>{
