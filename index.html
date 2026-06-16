@@ -536,6 +536,9 @@
           <span class="dur" data-d="30">30 min</span>
           <span class="dur" data-d="60">1 hr</span>
           <span class="dur" data-d="90">1.5 hr</span>
+          <span class="dur" data-d="120">2 hr</span>
+          <span class="dur" data-d="150">2.5 hr</span>
+          <span class="dur" data-d="180">3 hr</span>
         </div>
         <button class="btn ghost block" id="addBtn" style="margin-bottom:14px">+ Add to today</button>
 
@@ -1126,7 +1129,7 @@ function runPlan(){
       </div>
       <div class="eyebrow">Your new Wednesday</div>
       <div class="agenda" id="resAgenda" style="margin-top:8px"></div>
-      ${out.placed.some(p=>p.start==null) ? `<div class="card"><div class="ch"><span class="pill move">Heads-up</span> A couple didn't fit today</div><p>${out.placed.filter(p=>p.start==null).map(p=>p.title).join(', ')} — your Wednesday's full, so I'd take these first thing tomorrow instead. Want that?</p></div>` : ``}
+      ${out.placed.some(p=>p.start==null) ? `<div class="card"><div class="ch"><span class="pill move">Heads-up</span> Didn't fit today</div><p>${out.placed.filter(p=>p.start==null).map(p=>p.title).join(', ')} — your Wednesday's genuinely full, so I'd protect what's already there and slot this in first thing tomorrow instead. Want that?</p></div>` : ``}
 
       <div class="card moved">
         <div class="ch"><span class="pill move">Moved</span> Padel → Saturday 4:00 pm</div>
