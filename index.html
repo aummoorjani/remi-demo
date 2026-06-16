@@ -496,7 +496,7 @@
       <h1>Remi</h1>
       <div class="status" id="status">Here for your Wednesday</div>
     </div>
-    <div class="right">Wed · Jun 17<br/><span style="color:var(--maroon);font-weight:600">Exams Thu</span></div>
+    <div class="right">Tue · Jun 16<br/><span style="color:var(--maroon);font-weight:600">Exams Thu</span></div>
   </div>
 
   <div class="body">
@@ -736,8 +736,17 @@
    Remi — seeded context.  EDIT to match Aum's real Wednesday.
    (placeholders flagged // confirm)
    ============================================================ */
+/* ---- TODAY: Tuesday June 16 — what the HOME page shows. EDIT to your real Tuesday. ---- */
+const TODAY_SCHED = [
+  {title:"Gym",                     start:8*60,    end:9*60,     kind:"play"},
+  {title:"INNO 2301 — Final Pitch", start:13*60,   end:14*60+40, kind:"class"},   // ← set your real pitch time
+  {title:"Study for exams",         start:16*60,   end:18*60,    kind:"study"},
+  {title:"Dinner with a friend",    start:20*60,   end:21*60+30, kind:"social"},
+];
+
+/* ---- WEDNESDAY June 17 — the day the Talk demo rearranges (tomorrow). ---- */
 const PROFILE = {
-  fixed: [ // Aum's real Wednesday
+  fixed: [ // Wednesday classes — protected; the demo plans around these
     {title:"CS 4100 — Principles of AI", start:9*60+50,  end:11*60+30, kind:"class"},
     {title:"ENGW 3304 — Presentation",   start:11*60+40, end:13*60+20, kind:"class"},
   ],
@@ -757,12 +766,17 @@ const PROFILE = {
 /* ---------- calendar data (June 2026) ----------
    Keyed by day-of-month. Each event: {t:title, start:minutes, kind, dur?(min), end?(min)}.
    Wednesday Jun 17 = "today" in the demo frame. Events trace to PROFILE + the demo week. */
-const TODAY_DOM = 17;                 // Wed Jun 17 highlighted as today
+const TODAY_DOM = 16;                 // Tue Jun 16 highlighted as today
 const JUN_FIRST_DOW = 1;             // Jun 1 2026 falls on a Monday (0=Sun … 6=Sat)
 const JUN_DAYS = 30;
 const CAL = {
   15:[{t:"Class",start:9*60,kind:"class",dur:90},{t:"Work shift",start:14*60,kind:"work",dur:180},{t:"Gym",start:19*60,kind:"play",dur:60}],
-  16:[{t:"Class",start:12*60,kind:"class",dur:90},{t:"Study block",start:18*60,kind:"study",dur:120}],
+  16:[ // Tue — TODAY, matches the home page
+    {t:"Gym",start:8*60,end:9*60,kind:"play"},
+    {t:"INNO 2301 — Final Pitch",start:13*60,end:14*60+40,kind:"class"},
+    {t:"Study for exams",start:16*60,end:18*60,kind:"study"},
+    {t:"Dinner with a friend",start:20*60,end:21*60+30,kind:"social"},
+  ],
   17:[ // Wed — the real Wednesday, from PROFILE
     {t:"CS 4100 — Principles of AI",start:9*60+50,end:11*60+30,kind:"class"},
     {t:"ENGW 3304 — Presentation",start:11*60+40,end:13*60+20,kind:"class"},
@@ -793,11 +807,10 @@ const icon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke
    point on the timeline (just after classes, into the study window) and
    then let the real wall-clock advance it second-to-second so the now-line
    and current-block glow feel live. Clamped to the day so it always reads. */
-const DEMO_ANCHOR = 16*60 + 24;           // 4:24 pm — mid-study, feels live
-const _bootMs = Date.now();
-function nowMin(){
-  const drift = (Date.now() - _bootMs) / 60000;   // real minutes since load
-  return Math.min(PROFILE.dayEnd - 2, DEMO_ANCHOR + drift);
+function nowMin(){                         // real wall-clock — "now" is correct whenever you present today
+  const d = new Date();
+  const m = d.getHours()*60 + d.getMinutes();
+  return Math.max(PROFILE.dayStart, Math.min(PROFILE.dayEnd - 2, m));
 }
 function greetWord(){
   const h = new Date().getHours();
@@ -921,7 +934,7 @@ function injectNowLine(el, blocks){
 
 let _todayTick = null;
 function renderToday(){
-  const base = [...PROFILE.fixed, ...PROFILE.planned].sort((a,b)=>a.start-b.start);
+  const base = [...TODAY_SCHED].sort((a,b)=>a.start-b.start);
   renderAgenda(document.getElementById('todayAgenda'), base, true);
   // time-aware greeting + sub
   const gw = greetWord();
