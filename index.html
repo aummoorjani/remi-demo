@@ -79,7 +79,7 @@
   @keyframes slideL{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
   @keyframes slideR{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
   /* staggered entrance for first-level children of a view */
-  .view.on > .stagger{opacity:0;animation:rise .5s cubic-bezier(.2,.8,.2,1) forwards}
+  .view.on > .stagger{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
   .view.on > .stagger:nth-child(1){animation-delay:.04s}
   .view.on > .stagger:nth-child(2){animation-delay:.10s}
   .view.on > .stagger:nth-child(3){animation-delay:.16s}
@@ -439,6 +439,23 @@
 
   .hide{display:none!important}
 
+  /* ----- chat input bar (Talk) ----- */
+  .chatbar{display:flex;gap:8px;align-items:center;margin-top:8px;position:sticky;bottom:0;
+    background:linear-gradient(180deg,rgba(251,251,250,0),var(--bg) 32%);padding:8px 0 2px}
+  .chatbar input{flex:1;border:1px solid var(--line);border-radius:22px;padding:12px 16px;font-size:14px;
+    font-family:var(--body);background:#fff;color:var(--ink)}
+  .chatbar input:focus{outline:none;border-color:var(--blue)}
+  .sendbtn{flex:none;width:42px;height:42px;border-radius:50%;border:none;background:var(--blue);color:#fff;
+    font-size:18px;font-weight:700;cursor:pointer;display:grid;place-items:center;transition:transform .08s,filter .15s}
+  .sendbtn:active{transform:scale(.94)} .sendbtn:hover{filter:brightness(1.05)}
+  /* Remi's plan, rendered inside the chat thread */
+  .timing.inbubble{margin:11px 0 1px;gap:8px}
+  .timing.inbubble .stat{padding:9px 11px}
+  .timing.inbubble .v{font-size:21px}
+  .planmsg{display:flex;gap:9px;max-width:100%;animation:msgin .42s cubic-bezier(.2,.8,.2,1)}
+  .planmsg .planwrap{flex:1;min-width:0}
+  .planmsg .agenda{margin-bottom:4px}
+
   /* ----- shared tactile + finishing touches ----- */
   .todo,.set,.entry,.remind,.cell,.dpitem{transition:transform .12s cubic-bezier(.2,.8,.2,1),
     box-shadow .2s,border-color .2s,background .2s,opacity .2s}
@@ -523,32 +540,14 @@
       <div class="thread" id="thread">
         <div class="msg">
           <div class="mava"><img src="remi-logo.png" alt="Remi"/></div>
-          <div class="mb">Add the things that came up and I'll fit them around your classes — and keep Thursday's exams in mind.</div>
+          <div class="mb">Tell me what came up — in your own words — and I'll fit it around your classes and keep Thursday's exams in mind.</div>
         </div>
       </div>
 
-      <div id="composer">
-        <div class="addrow">
-          <input id="taskName" placeholder="e.g. pick up a package" />
-        </div>
-        <div class="durs" id="durs">
-          <span class="dur sel" data-d="15">15 min</span>
-          <span class="dur" data-d="30">30 min</span>
-          <span class="dur" data-d="60">1 hr</span>
-          <span class="dur" data-d="90">1.5 hr</span>
-          <span class="dur" data-d="120">2 hr</span>
-          <span class="dur" data-d="150">2.5 hr</span>
-          <span class="dur" data-d="180">3 hr</span>
-        </div>
-        <button class="btn ghost block" id="addBtn" style="margin-bottom:14px">+ Add to today</button>
-
-        <div class="tasklist" id="taskList"></div>
-        <div class="empty" id="emptyHint">Nothing added yet. Pull a few from the room.</div>
-
-        <button class="btn primary" id="planBtn" disabled>Plan my Wednesday</button>
+      <div class="chatbar">
+        <input id="chatInput" placeholder="e.g. grab a package, call the dentist, finish my lab report…" autocomplete="off" />
+        <button class="sendbtn" id="chatSend" aria-label="Send">↑</button>
       </div>
-
-      <div id="result"></div>
     </section>
 
     <!-- ===== YOU ===== -->
@@ -1190,13 +1189,81 @@ function streamText(el, text, done){
     setTimeout(tick, 34 + Math.random()*44);
   })();
 }
-function resetPlan(){
-  newTasks=[]; planned=false;
-  document.getElementById('result').innerHTML='';
-  document.getElementById('composer').classList.remove('hide');
-  document.getElementById('status').textContent="Here for your Wednesday";
-  setPresence('idle');
-  renderTasks();
+/* ---------- Talk = chat: type plainly → Remi replies with the plan + approve/deny ---------- */
+const DEFAULT_TASKS = [
+  {title:"Pick up a package",   len:15},
+  {title:"Call the dentist",    len:30},
+  {title:"Finish the lab report", len:60},
+];
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function scrollThread(){ const b=document.querySelector('.body'); if(b) b.scrollTop=b.scrollHeight; }
+/* lenient local parse — pulls task phrases + durations from plain language; falls back to the demo set */
+function parseTasks(text){
+  const parts = text.split(/\s*(?:,|;|\band\b|\bthen\b|\balso\b|\bplus\b)\s*/i).map(s=>s.trim()).filter(Boolean);
+  const durRe = /(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)\b|\b(an?\s+hour|half\s*(?:an?\s*)?hour|hour\s*and\s*a\s*half|couple\s*(?:of\s*)?hours)\b/i;
+  const out = [];
+  for(let c of parts){
+    let len = 30;
+    const m = c.match(durRe);
+    if(m){
+      if(m[1]){ const n=parseFloat(m[1]); len = /^h/i.test(m[2]||'') ? Math.round(n*60) : Math.round(n); }
+      else if(m[3]){ const p=m[3].toLowerCase();
+        len = p.includes('and a half')?90 : p.includes('couple')?120 : p.includes('half')?30 : 60; }
+      c = c.replace(m[0],' ').replace(/\bfor\b/gi,' ').replace(/\s+/g,' ').trim();
+    }
+    c = c.replace(/^(i\s+(?:have|need|got|gotta|have\s+to|need\s+to)\s+(?:to\s+)?|i've\s+got|got\s+to|got|a|an|the|some|my)\s+/i,'').trim();
+    if(c && c.length>1) out.push({ title:c.charAt(0).toUpperCase()+c.slice(1), len:Math.max(15,Math.min(180,len)) });
+  }
+  return out.length ? out : null;
+}
+function sendChat(){
+  const inp = document.getElementById('chatInput');
+  const text = (inp.value||'').trim(); if(!text) return;
+  const thread = document.getElementById('thread');
+  inp.value='';
+  const u = document.createElement('div'); u.className='msg me';
+  u.innerHTML = `<div class="mb">${escapeHtml(text)}</div>`;
+  thread.appendChild(u);
+  setPresence('busy'); document.getElementById('status').textContent="Working it out…";
+  const reply = document.createElement('div'); reply.className='msg';
+  reply.innerHTML = `<div class="mava"><img src="remi-logo.png" alt="Remi"/></div><div class="mb"><span class="typing"><i></i><i></i><i></i></span></div>`;
+  thread.appendChild(reply); scrollThread();
+  const t0 = performance.now();
+  newTasks = parseTasks(text) || DEFAULT_TASKS.slice();
+  const out = plan();
+  const titles = newTasks.map(t=>t.title);
+  setTimeout(()=>{
+    const secs = Math.max(1.1,(performance.now()-t0)/1000).toFixed(1);
+    setPresence('speak'); document.getElementById('status').textContent="Sorted ✓";
+    const summary = `Sounds good. Exams are Thursday, so I kept your Wednesday evening clear, moved padel to Saturday, and fit ${titles.length===1?'that':('your '+titles.length+' things')} around your classes. Here's your Wednesday:`;
+    reply.querySelector('.mb').innerHTML = `<span id="planSay"></span>
+      <div class="timing inbubble"><div class="stat remi"><div class="k">Remi</div><div class="v">${secs}s</div></div>
+      <div class="stat hand"><div class="k">By hand</div><div class="v">12–18<span style="font-size:13px"> min</span></div></div></div>`;
+    streamText(reply.querySelector('#planSay'), summary, ()=> setPresence('idle'));
+    const pb = document.createElement('div'); pb.className='planmsg';
+    pb.innerHTML = `<div class="mava" style="visibility:hidden"></div><div class="planwrap">
+      <div class="agenda" id="resAgenda"></div>
+      ${out.placed.some(p=>p.start==null) ? `<div class="card"><div class="ch"><span class="pill move">Heads-up</span> Didn't fit today</div><p>${out.placed.filter(p=>p.start==null).map(p=>p.title).join(', ')} — your Wednesday's genuinely full, so I'd protect what's already there and slot this in first thing tomorrow instead. Want that?</p></div>` : ``}
+      <div class="card moved"><div class="ch"><span class="pill move">Moved</span> Padel → Saturday 4:00 pm</div><p>${out.moved.reason}</p></div>
+      <div class="card ask"><div class="ch"><span class="pill money">Costs money</span> Book the padel court?</div><p>Saturday 4:00 pm at your usual place — $12. I won't pay for anything without asking you first.</p><div class="ask-actions"><button class="btn go" id="approve">Yes, book it</button><button class="btn ghost" id="later">Not now</button></div></div>
+      <p style="font-size:12.5px;color:var(--grey);margin-top:14px">Reminders set · I'll nudge you 15 min before each.</p></div>`;
+    thread.appendChild(pb);
+    const ra = pb.querySelector('#resAgenda');
+    ra.innerHTML = out.agenda.map(b=>blockHTML(b).replace('class="slot"','class="slot pop"')).join("");
+    wireAgendaTaps(ra, out.agenda);
+    ra.querySelectorAll('.slot').forEach((s,i)=> setTimeout(()=>s.classList.add('in'), 80*i));
+    pb.querySelector('#approve').onclick = e=>{
+      const card=e.target.closest('.card'); const box=e.target.parentElement.parentElement;
+      box.innerHTML = `<div class="ch" style="color:var(--ok)">${icon} Booked — Saturday 4:00 pm. Confirmation in your email.</div>`;
+      if(card){ card.style.background="var(--ok-wash)"; card.style.borderColor="#cfe6d8"; }
+      toast("Padel booked for Saturday 4:00 pm", true);
+    };
+    pb.querySelector('#later').onclick = e=>{
+      e.target.parentElement.parentElement.innerHTML = `<div class="ch" style="color:var(--ink-soft)">Okay — left it unbooked. It's on your Saturday whenever you decide.</div>`;
+      toast("Left it unbooked — it's on your Saturday");
+    };
+    scrollThread();
+  }, 1400);
 }
 
 /* ---------- nav ---------- */
@@ -1216,12 +1283,8 @@ function switchView(v){
 
 /* ---------- wire up ---------- */
 document.querySelectorAll('.nav button').forEach(b=> b.onclick=()=>switchView(b.dataset.v));
-document.getElementById('durs').onclick = e=>{ if(!e.target.classList.contains('dur'))return;
-  document.querySelectorAll('.dur').forEach(d=>d.classList.remove('sel'));
-  e.target.classList.add('sel'); selDur=+e.target.dataset.d; };
-document.getElementById('addBtn').onclick = addTask;
-document.getElementById('taskName').addEventListener('keydown', e=>{ if(e.key==='Enter') addTask(); });
-document.getElementById('planBtn').onclick = runPlan;
+document.getElementById('chatSend').onclick = sendChat;
+document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
 
 document.querySelectorAll('[data-go]').forEach(e=> e.onclick=()=>switchView(e.dataset.go));
 document.querySelectorAll('.back').forEach(b=> b.onclick=()=>switchView(b.dataset.back));
@@ -1268,7 +1331,7 @@ document.getElementById('sheetScrim').onclick = closeSheet;
 })();
 
 setPresence('idle');
-renderToday(); renderYou(); renderTasks(); renderMonth(); setCalMode('month');
+renderToday(); renderYou(); renderMonth(); setCalMode('month');
 </script>
 </body>
 </html>
