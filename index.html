@@ -312,6 +312,10 @@
   .dpitem.exam{border-color:#eccdcb;background:var(--maroon-wash)}
   .dpitem.exam .dpn{color:var(--maroon)}
   .dpitem.play{border-color:#cfe6f4}
+  .dpitem.gone{background:#fafafa;border-style:dashed}
+  .dpitem.gone .dpn{text-decoration:line-through;color:var(--grey)}
+  .dpitem.gone .dpt{text-decoration:line-through;opacity:.6}
+  .dpitem.gone .dpm{color:var(--blue-deep)}
   .dpempty{font-size:13px;color:var(--grey);text-align:center;padding:16px;border:1px dashed var(--line);border-radius:12px}
 
   /* ----- to-dos ----- */
@@ -615,7 +619,7 @@
         <div class="day today"><div class="dh"><span class="today-pill">Today</span>Tuesday<span class="dd">Jun 16</span></div>
           <div class="chips"><span class="chip play">Gym 8:00</span><span class="chip cls">2 classes</span><span class="chip cls">INNO 1:30–5</span><span class="chip">Study 5:00</span><span class="chip">Dinner 8:00</span></div></div>
         <div class="day"><div class="dh">Wednesday<span class="dd">Jun 17</span></div>
-          <div class="chips"><span class="chip cls">2 classes</span><span class="chip">Study 4:00</span><span class="chip">Dinner 8:00</span><span class="chip play">+3 new</span></div></div>
+          <div class="chips"><span class="chip cls">2 classes</span><span class="chip">Study 4:00</span><span class="chip">Dinner 8:00</span><span class="chip play">+3 new</span><span class="chip none" style="text-decoration:line-through">Padel → Sat</span></div></div>
         <div class="day"><div class="dh"><span style="color:var(--maroon);font-size:11px">●</span>Thursday<span class="dd">Jun 18</span></div>
           <div class="chips"><span class="chip" style="background:var(--maroon-wash);color:var(--maroon)">Exams 9:00</span></div></div>
         <div class="day"><div class="dh">Friday<span class="dd">Jun 19</span></div>
@@ -791,6 +795,7 @@ const CAL = {
     {t:"CS 4100 — Principles of AI",start:9*60+50,end:11*60+30,kind:"class"},
     {t:"ENGW 3304 — Presentation",start:11*60+40,end:13*60+20,kind:"class"},
     {t:"Study for exams",start:16*60,end:18*60,kind:"study"},
+    {t:"Padel",start:18*60+30,end:20*60,kind:"play",movedOut:true,note:"moved to Saturday — exams Thursday"},
     {t:"Dinner with a friend",start:20*60,end:21*60+30,kind:"social"},
   ],
   18:[{t:"Exams",start:9*60,kind:"exam",dur:180,note:"Two exams — your heaviest deadline this week."}],
@@ -1039,7 +1044,7 @@ function renderDayPanel(){
     return;
   }
   const items = evs.map(e=>{
-    const cls = e.kind==='exam' ? 'exam' : (e.kind==='play' ? 'play' : '');
+    const cls = (e.movedOut?'gone ':'') + (e.kind==='exam' ? 'exam' : (e.kind==='play' ? 'play' : ''));
     const time = e.start>=23*60+59 ? 'all day' : fmt(e.start);
     const meta = (KIND_LABEL[e.kind]||'') + (e.moved?' · moved by Remi':'') + (e.note?' · '+e.note:'');
     return `<div class="dpitem ${cls}"><div class="dpt">${time}</div>
@@ -1065,7 +1070,7 @@ function dayBreakdownSheet(dom){
       <div class="dpempty">Open day — tap Talk to fill it around your week.</div>`;
   } else {
     body = `<div class="dpsub" style="margin:10px 0 8px">${evs.length} ${evs.length===1?'thing':'things'} on your day</div>` + evs.map(e=>{
-      const cls = e.kind==='exam' ? 'exam' : (e.kind==='play' ? 'play' : '');
+      const cls = (e.movedOut?'gone ':'') + (e.kind==='exam' ? 'exam' : (e.kind==='play' ? 'play' : ''));
       const time = e.start>=23*60+59 ? 'all day' : fmt(e.start) + (e.end!=null?' – '+fmt(e.end):'');
       const meta = (KIND_LABEL[e.kind]||'') + (e.moved?' · moved by Remi':'') + (e.note?' · '+e.note:'');
       return `<div class="dpitem ${cls}"><div class="dpt" style="width:96px">${time}</div>
