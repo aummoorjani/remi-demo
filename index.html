@@ -138,11 +138,11 @@
   .block .live .dotnow{width:6px;height:6px;border-radius:50%;background:var(--blue);
     animation:dotpulse 1.2s ease-in-out infinite}
   /* the "now" marker line that floats at the real current time */
-  .nowline{position:relative;display:flex;align-items:center;gap:7px;margin:1px 0 1px 0;
-    padding-left:34px;height:0;z-index:3;pointer-events:none}
-  .nowline .nl{position:absolute;left:74px;right:6px;height:2px;
+  .nowline{position:relative;display:flex;align-items:center;margin:7px 0;
+    padding-left:34px;height:22px;z-index:3;pointer-events:none}
+  .nowline .nl{position:absolute;left:118px;right:6px;top:50%;transform:translateY(-50%);height:2px;
     background:linear-gradient(90deg,var(--maroon),rgba(158,27,34,.15));border-radius:2px}
-  .nowline .nb{position:absolute;left:62px;background:var(--maroon);color:#fff;font-size:10px;
+  .nowline .nb{position:absolute;left:62px;top:50%;transform:translateY(-50%);background:var(--maroon);color:#fff;font-size:10px;
     font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:7px;
     box-shadow:0 2px 8px rgba(158,27,34,.3);white-space:nowrap}
 
@@ -255,7 +255,11 @@
 
   /* ----- calendar / week ----- */
   .week{display:flex;flex-direction:column;gap:8px}
-  .day{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px}
+  .day{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px;
+    cursor:pointer;transition:transform .1s,border-color .15s,box-shadow .2s}
+  .day:hover{border-color:#cfe0ec;box-shadow:0 4px 14px rgba(40,50,61,.06)}
+  .day:active{transform:scale(.99)}
+  .day .dh .chev{margin-left:8px;color:var(--grey);font-size:15px;font-weight:400}
   .day.today{border-color:#bfe0f2;box-shadow:0 0 0 3px var(--blue-wash)}
   .day .dh{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
   .day .dh .dd{margin-left:auto;font-size:12px;color:var(--grey);font-weight:600}
@@ -511,7 +515,7 @@
     <div class="avatar alive" id="ava"><img src="remi-logo.png" alt="Remi" /><span class="pres" id="pres"></span></div>
     <div>
       <h1>Remi</h1>
-      <div class="status" id="status">Here for your Wednesday</div>
+      <div class="status" id="status">Here for your day</div>
     </div>
     <div class="right">Tue · Jun 16<br/><span style="color:var(--maroon);font-weight:600">Exams Thu</span></div>
   </div>
@@ -521,11 +525,11 @@
     <!-- ===== TODAY ===== -->
     <section class="view on" id="v-today">
       <div class="eyebrow stagger" id="todayEyebrow">Your day</div>
-      <div class="h2 stagger" id="todayGreeting">Good evening, Aum</div>
-      <div class="sub stagger" id="todaySub">Two classes are behind you. Here's how the rest of Wednesday is shaping up.</div>
+      <div class="h2 stagger" id="todayGreeting">Good afternoon, Aum</div>
+      <div class="sub stagger" id="todaySub">Here's how your day is shaping up.</div>
       <div class="remind stagger" id="remindStrip">
         <div class="rbell">🔔<span class="rcount" id="remindCount">3</span></div>
-        <div><div class="rt">3 reminders set for today</div><div class="rm" id="remindNext">Next: study for exams at 4:00 pm</div></div>
+        <div><div class="rt">3 reminders set for today</div><div class="rm" id="remindNext">Next: study for exams at 5:00 pm</div></div>
         <div class="arr">›</div></div>
       <div class="entry stagger" data-go="insights"><div class="ei">📊</div>
         <div><div class="et">Your week with Remi</div><div class="em">2h 15m of planning saved · 14 things handled</div></div>
@@ -608,9 +612,9 @@
       <div class="week hide" id="calWeek">
         <div class="day"><div class="dh">Monday<span class="dd">Jun 15</span></div>
           <div class="chips"><span class="chip cls">Class 9:00</span><span class="chip">Work 2:00</span><span class="chip">Gym 7:00</span></div></div>
-        <div class="day"><div class="dh">Tuesday<span class="dd">Jun 16</span></div>
-          <div class="chips"><span class="chip cls">Class 12:00</span><span class="chip">Study 6:00</span></div></div>
-        <div class="day today"><div class="dh"><span class="today-pill">Today</span>Wednesday<span class="dd">Jun 17</span></div>
+        <div class="day today"><div class="dh"><span class="today-pill">Today</span>Tuesday<span class="dd">Jun 16</span></div>
+          <div class="chips"><span class="chip play">Gym 8:00</span><span class="chip cls">2 classes</span><span class="chip cls">INNO 1:30–5</span><span class="chip">Study 5:00</span><span class="chip">Dinner 8:00</span></div></div>
+        <div class="day"><div class="dh">Wednesday<span class="dd">Jun 17</span></div>
           <div class="chips"><span class="chip cls">2 classes</span><span class="chip">Study 4:00</span><span class="chip">Dinner 8:00</span><span class="chip play">+3 new</span></div></div>
         <div class="day"><div class="dh"><span style="color:var(--maroon);font-size:11px">●</span>Thursday<span class="dd">Jun 18</span></div>
           <div class="chips"><span class="chip" style="background:var(--maroon-wash);color:var(--maroon)">Exams 9:00</span></div></div>
@@ -687,7 +691,7 @@
         <div class="b" style="height:24%"><span>S</span></div>
         <div class="b" style="height:18%"><span>S</span></div>
       </div>
-      <div class="note">Wednesday was your heaviest day — Remi front-loaded the small tasks and protected your study time for Thursday's exams.</div>
+      <div class="note">Wednesday is shaping up as your heaviest day — Remi front-loaded the small tasks and protected your study time for Thursday's exams.</div>
     </section>
 
     <!-- ===== WHAT REMI LEARNED ===== -->
@@ -740,10 +744,12 @@
    ============================================================ */
 /* ---- TODAY: Tuesday June 16 — what the HOME page shows. EDIT to your real Tuesday. ---- */
 const TODAY_SCHED = [
-  {title:"Gym",                     start:8*60,    end:9*60,     kind:"play"},
-  {title:"INNO 2301 — Final Pitch", start:13*60+30, end:15*60+15, kind:"class"},  // 1:30–3:15, live during your ~2:30 slot
-  {title:"Study for exams",         start:16*60,   end:18*60,    kind:"study"},
-  {title:"Dinner with a friend",    start:20*60,   end:21*60+30, kind:"social"},
+  {title:"Gym",                        start:8*60,     end:9*60,      kind:"play"},
+  {title:"CS 4100 — Principles of AI", start:9*60+50,  end:11*60+30,  kind:"class"},
+  {title:"ENGW 3304 — Presentation",   start:11*60+40, end:13*60+20,  kind:"class"},
+  {title:"INNO 2301 — Final Pitch",    start:13*60+30, end:17*60,     kind:"class"},  // 1:30–5:00, you present ~2:30
+  {title:"Study for exams",            start:17*60,    end:19*60,     kind:"study"},  // after INNO — confirm time
+  {title:"Dinner with a friend",       start:20*60,    end:21*60+30,  kind:"social"},
 ];
 
 /* ---- WEDNESDAY June 17 — the day the Talk demo rearranges (tomorrow). ---- */
@@ -759,7 +765,7 @@ const PROFILE = {
   ],
   dayStart:8*60, dayEnd:22*60,
   rules:[
-    {ic:"🎓", t:"Nothing during class", m:"9:00–10:30 and 12:00–1:30 are locked"},
+    {ic:"🎓", t:"Nothing during class", m:"9:50–11:30 & 11:40–1:20 Mon–Thu · INNO 1:30–5 Tue & Thu"},
     {ic:"🏋️", t:"Gym stays in the morning", m:"never moved to the evening"},
     {ic:"🔒", t:"Ask before money or messages", m:"Remi checks with you first"},
   ],
@@ -775,8 +781,10 @@ const CAL = {
   15:[{t:"Class",start:9*60,kind:"class",dur:90},{t:"Work shift",start:14*60,kind:"work",dur:180},{t:"Gym",start:19*60,kind:"play",dur:60}],
   16:[ // Tue — TODAY, matches the home page
     {t:"Gym",start:8*60,end:9*60,kind:"play"},
-    {t:"INNO 2301 — Final Pitch",start:13*60+30,end:15*60+15,kind:"class"},
-    {t:"Study for exams",start:16*60,end:18*60,kind:"study"},
+    {t:"CS 4100 — Principles of AI",start:9*60+50,end:11*60+30,kind:"class"},
+    {t:"ENGW 3304 — Presentation",start:11*60+40,end:13*60+20,kind:"class"},
+    {t:"INNO 2301 — Final Pitch",start:13*60+30,end:17*60,kind:"class"},
+    {t:"Study for exams",start:17*60,end:19*60,kind:"study"},
     {t:"Dinner with a friend",start:20*60,end:21*60+30,kind:"social"},
   ],
   17:[ // Wed — the real Wednesday, from PROFILE
@@ -855,30 +863,47 @@ function freeGaps(blocks){
 function lastBefore(arr,t){ let r=null; for(const b of arr){ if(b.end<=t) r=b; } return r; }
 
 function plan(){
-  // 1. padel moves off Wednesday — exams Thursday
+  // padel moves off Wednesday — exams Thursday (the demo's trust narrative)
   const moved = {title:"Padel", to:"Saturday 4:00 pm",
     reason:"You've got exams Thursday — I kept your Wednesday evening clear and moved padel to your free Saturday."};
-  // 2. blocks that stay on Wednesday
-  const keep = [...PROFILE.fixed, ...PROFILE.planned.filter(p=>!p.examConflict)]
-    .map(b=>({...b}));
-  // 3. fit the new tasks into the gaps
-  const gaps = freeGaps(keep);
+  const keep = [...PROFILE.fixed, ...PROFILE.planned.filter(p=>!p.examConflict)].map(b=>({...b}));
+  const occupied = keep.map(b=>({...b}));       // grows as each task lands
   const placed = [];
-  for(const t of newTasks){
-    const g = gaps.find(g => (g.end-g.start) >= t.len);
-    if(!g){ placed.push({...t, start:null}); continue; }
-    const start = g.start;
-    const prev = placed.length ? placed[placed.length-1] : null;
-    let reason;
-    if(prev && prev.start!=null && prev.end===start) reason = `Right after “${prev.title}” — you're still free.`;
-    else if(g.after && g.after.kind==="class") reason = "Slotted right after your class.";
-    else if(g.after && g.after.kind==="study") reason = "Tucked in after your study block.";
-    else if(!g.after) reason = "First thing — your morning was open.";
-    else reason = "Dropped into an open stretch, nothing else there.";
-    placed.push({...t, start, end:start+t.len, reason});
-    g.start += t.len;
+  function firstGapFrom(from, len){
+    const s = [...occupied].sort((a,b)=>a.start-b.start);
+    let cur = Math.max(PROFILE.dayStart, from);
+    for(const b of s){
+      if(b.end <= cur) continue;
+      if(b.start - cur >= len) return cur;        // fits before this block
+      cur = Math.max(cur, b.end);
+    }
+    return (PROFILE.dayEnd - cur >= len) ? cur : null;
   }
-  // 4. assemble Wednesday agenda
+  function blockBefore(s){ return [...occupied].sort((a,b)=>a.start-b.start).filter(b=>b.end<=s).slice(-1)[0]; }
+  // 1) timed tasks ("at 11") — honour the time, bump past conflicts and say so
+  for(const t of newTasks.filter(t=>t.start!=null)){
+    const want = t.start, s = firstGapFrom(want, t.len);
+    if(s==null){ placed.push({...t, start:null}); continue; }
+    const reason = s===want
+      ? `At ${fmt(want)}, like you asked.`
+      : `${fmt(want)} runs into what's already on your day — I moved it to your first open slot, ${fmt(s)}.`;
+    placed.push({...t, start:s, end:s+t.len, reason});
+    occupied.push({start:s, end:s+t.len, kind:"new"});
+  }
+  // 2) untimed tasks — fill the remaining open stretches front-to-back
+  for(const t of newTasks.filter(t=>t.start==null)){
+    const s = firstGapFrom(PROFILE.dayStart, t.len);
+    if(s==null){ placed.push({...t, start:null}); continue; }
+    const prev = placed.filter(p=>p.start!=null).slice(-1)[0], before = blockBefore(s);
+    let reason;
+    if(prev && prev.end===s) reason = `Right after "${prev.title}" — you're still free.`;
+    else if(before && before.kind==="class") reason = "Slotted right after your class.";
+    else if(before && before.kind==="study") reason = "Tucked in after your study block.";
+    else if(!before) reason = "First thing — your morning was open.";
+    else reason = "Dropped into an open stretch, nothing else there.";
+    placed.push({...t, start:s, end:s+t.len, reason});
+    occupied.push({start:s, end:s+t.len, kind:"new"});
+  }
   const agenda = [...keep, ...placed.filter(p=>p.start!=null)
       .map(p=>({title:p.title, start:p.start, end:p.end, kind:"new", reason:p.reason}))]
       .sort((a,b)=>a.start-b.start);
@@ -941,6 +966,7 @@ function renderToday(){
   // time-aware greeting + sub
   const gw = greetWord();
   document.getElementById('todayGreeting').textContent = `${gw}, Aum`;
+  document.getElementById('status').textContent = 'Here for your day';
   const n = nowMin();
   const past = base.filter(b => n >= (b.end!=null?b.end:eEnd(b))).length;
   const cur = base.find(b => n>=b.start && n<(b.end!=null?b.end:eEnd(b)));
@@ -948,7 +974,7 @@ function renderToday(){
   let sub;
   if(cur) sub = `Right now: ${cur.title}. ` + (next? `Then ${next.title.split(' — ')[0]} at ${fmt(next.start)}.` : `Last thing on today.`);
   else if(next) sub = `${past} done so far. Next up: ${next.title.split(' — ')[0]} at ${fmt(next.start)}.`;
-  else sub = `That's your Wednesday wrapped — exams are tomorrow, rest up.`;
+  else sub = `That's your Tuesday wrapped — exams Thursday, rest up tonight.`;
   document.getElementById('todaySub').textContent = sub;
   // keep the now-line / glow advancing while Today is open
   clearInterval(_todayTick);
@@ -998,6 +1024,8 @@ function selectDay(d){
     c.classList.toggle('sel', +c.dataset.dom===d);
   });
   renderDayPanel();
+  // the panel sits below the grid — bring it into view so the tap clearly does something
+  document.getElementById('dayPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 function renderDayPanel(){
   const panel = document.getElementById('dayPanel');
@@ -1025,6 +1053,27 @@ function setCalMode(mode){
   m.classList.toggle('hide', mode!=='month');
   w.classList.toggle('hide', mode!=='week');
   document.getElementById('calTitle').textContent = mode==='month' ? 'June 2026' : 'Jun 15 – 21';
+}
+/* tap any week-view day → its full breakdown in a bottom sheet (always on-screen) */
+function dayBreakdownSheet(dom){
+  const dow = (JUN_FIRST_DOW + dom - 1) % 7;
+  const evs = (CAL[dom] || []).slice().sort((a,b)=>a.start-b.start);
+  const head = `<div class="sk">June ${dom}</div><div class="stt">${WDAY[dow]}${dom===TODAY_DOM?' · Today':''}</div>`;
+  let body;
+  if(!evs.length){
+    body = `<div class="dpsub" style="margin:10px 0 8px">Nothing scheduled.</div>
+      <div class="dpempty">Open day — tap Talk to fill it around your week.</div>`;
+  } else {
+    body = `<div class="dpsub" style="margin:10px 0 8px">${evs.length} ${evs.length===1?'thing':'things'} on your day</div>` + evs.map(e=>{
+      const cls = e.kind==='exam' ? 'exam' : (e.kind==='play' ? 'play' : '');
+      const time = e.start>=23*60+59 ? 'all day' : fmt(e.start) + (e.end!=null?' – '+fmt(e.end):'');
+      const meta = (KIND_LABEL[e.kind]||'') + (e.moved?' · moved by Remi':'') + (e.note?' · '+e.note:'');
+      return `<div class="dpitem ${cls}"><div class="dpt" style="width:96px">${time}</div>
+        <div class="dpb"><div class="dpn">${e.t}</div><div class="dpm">${meta}</div></div></div>`;
+    }).join('');
+  }
+  openSheet(head + body + `<div class="sacts"><button class="btn ghost" data-sheet-close>Close</button></div>`);
+  document.querySelectorAll('[data-sheet-close]').forEach(x=> x.onclick=closeSheet);
 }
 
 /* ---------- detail sheet ---------- */
@@ -1197,22 +1246,46 @@ const DEFAULT_TASKS = [
 ];
 function escapeHtml(s){ return s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function scrollThread(){ const b=document.querySelector('.body'); if(b) b.scrollTop=b.scrollHeight; }
-/* lenient local parse — pulls task phrases + durations from plain language; falls back to the demo set */
+/* lenient local parse — pulls task phrases + durations + a time-of-day from plain
+   language; falls back to the demo set. Returns {title, len, start|null}. */
 function parseTasks(text){
   const parts = text.split(/\s*(?:,|;|\band\b|\bthen\b|\balso\b|\bplus\b)\s*/i).map(s=>s.trim()).filter(Boolean);
   const durRe = /\b(?:for|about|around|roughly|approx(?:imately)?|~)?\s*((\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)|an?\s+hour|half\s*(?:an?\s*)?hour|hour\s*and\s*a\s*half|couple\s*(?:of\s*)?hours)\b/i;
+  const timeRe = /\b(?:at|by|around|from)\s+(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i;
   const out = [];
+  const NUM = {one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12};
   for(let c of parts){
-    let len = 30;
-    const m = c.match(durRe);
-    if(m){
-      if(m[2]){ const n=parseFloat(m[2]); len = /^h/i.test(m[3]) ? Math.round(n*60) : Math.round(n); }
-      else { const p=m[1].toLowerCase(); len = p.includes('and a half')?90 : p.includes('couple')?120 : p.includes('half')?30 : 60; }
-      c = (c.slice(0,m.index) + ' ' + c.slice(m.index + m[0].length)).replace(/\s+/g,' ').trim();
+    let len = 30, start = null;
+    // written-number durations → digits ("two hours" → "2 hours")
+    c = c.replace(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(hours?|hrs?|minutes?|mins?)\b/gi,(m,n,u)=>NUM[n.toLowerCase()]+' '+u);
+    // duration
+    const md = c.match(durRe);
+    if(md){
+      if(md[2]){ const n=parseFloat(md[2]); len = /^h/i.test(md[3]) ? Math.round(n*60) : Math.round(n); }
+      else { const p=md[1].toLowerCase(); len = p.includes('and a half')?90 : p.includes('couple')?120 : p.includes('half')?30 : 60; }
+      c = (c.slice(0,md.index) + ' ' + c.slice(md.index + md[0].length)).replace(/\s+/g,' ').trim();
     }
-    c = c.replace(/^(?:i\s+(?:have|need|gotta|got)\s+to\s+|i\s+(?:have|need|got)\s+|i've\s+got\s+|i\s+gotta\s+|i\s+want\s+to\s+|gotta\s+|got\s+to\s+|need\s+to\s+|have\s+to\s+|a\s+|an\s+|the\s+|some\s+|my\s+|to\s+)+/i,'');
-    c = c.replace(/\s+(?:for|about|around|roughly)\s*$/i,'').replace(/[.,;\s]+$/,'').trim();
-    if(c && c.length>1) out.push({ title:c.charAt(0).toUpperCase()+c.slice(1), len:Math.max(15,Math.min(180,len)) });
+    // time of day — "at 11", "at 11:30", "at 3pm", "by 9am", "at noon"
+    const mt = c.match(timeRe);
+    if(mt){
+      let hh = null, mm = 0;
+      if(/noon/i.test(mt[1])) hh = 12;
+      else if(/midnight/i.test(mt[1])) hh = 0;
+      else {
+        hh = parseInt(mt[2],10); mm = mt[3] ? parseInt(mt[3],10) : 0;
+        const ap = (mt[4]||'').toLowerCase();
+        if(ap==='pm' && hh<12) hh += 12;
+        else if(ap==='am' && hh===12) hh = 0;
+        else if(!ap && hh>=1 && hh<=7) hh += 12;   // bare 1–7 reads as afternoon
+      }
+      if(hh!=null){ start = hh*60 + mm; c = (c.slice(0,mt.index) + ' ' + c.slice(mt.index + mt[0].length)).replace(/\s+/g,' ').trim(); }
+    }
+    // strip temporal + first-person filler so the title stays short and clean
+    c = c.replace(/\b(tomorrow|today|tonight|this\s+(?:morning|afternoon|evening)|later\s*on|later|then|sometime)\b/gi,' ');
+    c = c.replace(/\bi'?ve\s+got\s+(?:an?\s+)?|i\s+(?:have|need|gotta|got)\s+(?:to|an?|a)\s+|i\s+(?:have|need|got)\s+(?:an?\s+)?|i'?m\s+|i\s+want\s+to\s+|i\s+gotta\s+/gi,' ');
+    c = c.replace(/^\s*(?:gotta\s+|got\s+to\s+|need\s+to\s+|have\s+to\s+|to\s+|a\s+|an\s+|the\s+|some\s+|my\s+)+/i,'');
+    c = c.replace(/\s+(?:for|about|around|roughly|at|by)\s*$/i,'').replace(/[.,;:\s]+$/,'').replace(/\s+/g,' ').trim();
+    if(c && c.length>1) out.push({ title:c.charAt(0).toUpperCase()+c.slice(1), len:Math.max(15,Math.min(180,len)), start });
   }
   return out.length ? out : null;
 }
@@ -1304,6 +1377,14 @@ document.querySelectorAll('.todo').forEach(t=> t.onclick=()=>{
 /* calendar month/week toggle */
 document.getElementById('calSeg').onclick = e=>{ const b=e.target.closest('button'); if(!b)return;
   setCalMode(b.dataset.cal); };
+// week-view rows map to Jun 15–21 in order — tap any one for its full daily breakdown
+document.querySelectorAll('#calWeek .day').forEach((d,i)=>{
+  const dom = 15 + i;
+  d.dataset.dom = dom;
+  const dh = d.querySelector('.dh');
+  if(dh && !dh.querySelector('.chev')){ const c=document.createElement('span'); c.className='chev'; c.textContent='›'; dh.appendChild(c); }
+  d.onclick = ()=> dayBreakdownSheet(dom);
+});
 
 /* reminders strip → detail sheet */
 document.getElementById('remindStrip').onclick = ()=>{
@@ -1311,7 +1392,7 @@ document.getElementById('remindStrip').onclick = ()=>{
     <div class="sk">Today's reminders</div>
     <div class="stt">3 reminders set</div>
     <div class="stime">Remi nudges you 15 min before each.</div>
-    <div class="srow"><div class="ic">📚</div><div><div class="t">Study for exams</div><div class="m">Reminder at 3:45 pm — 4:00 pm start</div></div></div>
+    <div class="srow"><div class="ic">📚</div><div><div class="t">Study for exams</div><div class="m">Reminder at 4:45 pm — 5:00 pm start</div></div></div>
     <div class="srow"><div class="ic">🍽️</div><div><div class="t">Dinner with a friend</div><div class="m">Reminder at 7:45 pm — 8:00 pm start</div></div></div>
     <div class="srow"><div class="ic">📦</div><div><div class="t">Pick up a package</div><div class="m">Reminder before the pickup window closes</div></div></div>
     <div class="sacts"><button class="btn primary" style="width:auto;flex:1" data-sheet-close>Got it</button></div>`);
